@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duck Sprite Frame Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .row {
+            margin-bottom: 30px;
+        }
+        .row-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .frame-container {
+            display: inline-block;
+            margin: 10px;
+            border: 2px solid #333;
+            background-color: white;
+            text-align: center;
+            vertical-align: top;
+        }
+        .frame-label {
+            background-color: #333;
+            color: white;
+            padding: 5px;
+            font-size: 12px;
+        }
+        .frame-canvas {
+            display: block;
+            border: 1px solid #ccc;
+        }
+        .frame-controls {
+            padding: 5px;
+            font-size: 10px;
+        }
+        .frame-controls input {
+            width: 40px;
+            margin: 2px;
+            font-size: 10px;
+        }
+        .frame-controls label {
+            display: inline-block;
+            width: 15px;
+            font-size: 10px;
+        }
+        .controls {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: white;
+            border: 1px solid #ccc;
+        }
+        .control-group {
+            margin: 10px 0;
+        }
+        label {
+            display: inline-block;
+            width: 80px;
+        }
+        input {
+            width: 60px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Duck Sprite Frame Tester</h1>
+    
+    <div class="controls">
+        <h3>Global Frame Extraction Controls</h3>
+        <div class="control-group">
+            <label>X:</label>
+            <input type="number" id="frameX" value="0" min="0" max="1024">
+            <label>Y:</label>
+            <input type="number" id="frameY" value="0" min="0" max="1024">
+            <label>Width:</label>
+            <input type="number" id="frameWidth" value="150" min="1" max="500">
+            <label>Height:</label>
+            <input type="number" id="frameHeight" value="256" min="1" max="500">
+        </div>
+        <button onclick="updateAllFrames()">Update All Frames</button>
+        <button onclick="loadSavedCoordinates()">Reload from Game</button>
+        <button onclick="exportCoordinates()">Export & Update Game</button>
+        <button onclick="saveCoordinates()">Save Coordinates</button>
+        <div id="status-message" style="margin-top: 10px; font-weight: bold;"></div>
+    </div>
+
+    <div class="row">
+        <div class="row-title">Row 1: Walk Animation</div>
+        <div class="frame-container">
+            <div class="frame-label">Frame 0</div>
+            <canvas class="frame-canvas" id="walk-0" width="150" height="256"></canvas>
+            <div class="frame-controls">
+                <label>X:</label><input type="number" id="walk-0-x" value="0" onchange="updateFrame('walk', 0)">
+                <label>Y:</label><input type="number" id="walk-0-y" value="0" onchange="updateFrame('walk', 0)"><br>
+                <label>W:</label><input type="number" id="walk-0-w" value="150" onchange="updateFrame('walk', 0)">
+                <label>H:</label><input type="number" id="walk-0-h" value="256" onchange="updateFrame('walk', 0)">
+            </div>
+        </div>
+        <div class="frame-container">
+            <div class="frame-label">Frame 1</div>
+            <canvas class="frame-canvas" id="walk-1" width="150" height="256"></canvas>
+            <div class="frame-controls">
+                <label>X:</label><input type="number" id="walk-1-x" value="150" onchange="updateFrame('walk', 1)">
+                <label>Y:</label><input type="number" id="walk-1-y" value="0" onchange="updateFrame('walk', 1)"><br>
+                <label>W:</label><input type="number" id="walk-1-w" value="150" onchange="updateFrame('walk', 1)">
+                <label>H:</label><input type="number" id="walk-1-h" value="256" onchange="updateFrame('walk', 1)">
+            </div>
+        </div>
+        <div class="frame-container">
+            <div class="frame-label">Frame 2</div>
+            <canvas class="frame-canvas" id="walk-2" width="150" height="256"></canvas>
+            <div class="frame-controls">
+                <label>X:</label><input type="number" id="walk-2-x" value="300" onchange="updateFrame('walk', 2)">
+                <label>Y:</label><input type="number" id="walk-2-y" value="0" onchange="updateFrame('walk', 2)"><br>
+                <label>W:</label><input type="number" id="walk-2-w" value="150" onchange="updateFrame('walk', 2)">
+                <label>H:</label><input type="number" id="walk-2-h" value="256" onchange="updateFrame('walk', 2)">
+            </div>
+        </div>
+        <div class="frame-container">
+            <div class="frame-label">Frame 3</div>
+            <canvas class="frame-canvas" id="walk-3" width="150" height="256"></canvas>
+            <div class="frame-controls">
+                <label>X:</label><input type="number" id="walk-3-x" value="450" onchange="updateFrame('walk', 3)">
+                <label>Y:</label><input type="number" id="walk-3-y" value="0" onchange="updateFrame('walk', 3)"><br>
+                <label>W:</label><input type="number" id="walk-3-w" value="150" onchange="updateFrame('walk', 3)">
+                <label>H:</label><input type="number" id="walk-3-h" value="256" onchange="updateFrame('walk', 3)">
+            </div>
+        </div>
+        <div class="frame-container">
+            <div class="frame-label">Frame 4</div>
+            <canvas class="frame-canvas" id="walk-4" width="150" height="256"></canvas>
+            <div class="frame-controls">
+                <label>X:</label><input type="number" id="walk-4-x" value="600" onchange="updateFrame('walk', 4)">
+                <label>Y:</label><input type="number" id="walk-4-y" value="0" onchange="updateFrame('walk', 4)"><br>
+                <label>W:</label><input type="number" id="walk-4-w" value="150" onchange="updateFrame('walk', 4)">
+                <label>H:</label><input type="number" id="walk-4-h" value="256" onchange="updateFrame('walk', 4)">
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="row-title">Row 2: Run Animation</div>
+        <div class="frame-container">
+            <div class="frame-label">Frame 0</div>
+            <canvas class="frame-canvas" id="run-0" width="150" height="256"></canvas>
+            <div class="frame-controls">
+                <label>X:</label><input type="number" id="run-0-x" value="0" onchange="updateFrame('run', 0)">
+                <label>Y:</label><input type="number" id="run-0-y" value="256" onchange="updateFrame('run', 0)"><br>
+                <label>W:</label><input type="number" id="run-0-w" value="150" onchange="updateFrame('run', 0)">
+                <label>H:</label><input type="number" id="run-0-h" value="256" onchange="updateFrame('run', 0)">
+            </div>
+        </div>
+        <div class="frame-container">
+            <div class="frame-label">Frame 1</div>
+            <canvas class="frame-canvas" id="run-1" width="150" height="256"></canvas>
+            <div class="frame-controls">
+                <label>X:</label><input type="number" id="run-1-x" value="150" onchange="updateFrame('run', 1)">
+                <label>Y:</label><input type="number" id="run-1-y" value="256" onchange="updateFrame('run', 1)"><br>
+                <label>W:</label><input type="number" id="run-1-w" value="150" onchange="updateFrame('run', 1)">
+                <label>H:</label><input type="number" id="run-1-h" value="256" onchange="updateFrame('run', 1)">
+            </div>
+        </div>
+        <div class="frame-container">
+            <div class="frame-label">Frame 2</div>
+            <canvas class="frame-canvas" id="run-2" width="150" height="256"></canvas>
+            <div class="frame-controls">
+                <label>X:</label><input type="number" id="run-2-x" value="300" onchange="updateFrame('run', 2)">
+                <label>Y:</label><input type="number" id="run-2-y" value="256" onchange="updateFrame('run', 2)"><br>
+                <label>W:</label><input type="number" id="run-2-w" value="150" onchange="updateFrame('run', 2)">
+                <label>H:</label><input type="number" id="run-2-h" value="256" onchange="updateFrame('run', 2)">
+            </div>
+        </div>
+        <div class="frame-container">
+            <div class="frame-label">Frame 3</div>
+            <canvas class="frame-canvas" id="run-3" width="150" height="256"></canvas>
+            <div class="frame-controls">
+                <label>X:</label><input type="number" id="run-3-x" value="450" onchange="updateFrame('run', 3)">
+                <label>Y:</label><input type="number" id="run-3-y" value="256" onchange="updateFrame('run', 3)"><br>
+                <label>W:</label><input type="number" id="run-3-w" value="150" onchange="updateFrame('run', 3)">
+                <label>H:</label><input type="number" id="run-3-h" value="256" onchange="updateFrame('run', 3)">
+            </div>
+        </div>
+        <div class="frame-container">
+            <div class="frame-label">Frame 4</div>
+            <canvas class="frame-canvas" id="run-4" width="150" height="256"></canvas>
+            <div class="frame-controls">
+                <label>X:</label><input type="number" id="run-4-x" value="600" onchange="updateFrame('run', 4)">
+                <label>Y:</label><input type="number" id="run-4-y" value="256" onchange="updateFrame('run', 4)"><br>
+                <label>W:</label><input type="number" id="run-4-w" value="150" onchange="updateFrame('run', 4)">
+                <label>H:</label><input type="number" id="run-4-h" value="256" onchange="updateFrame('run', 4)">
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="row-title">Row 4: Jump Animation</div>
+        <div class="frame-container">
+            <div class="frame-label">Frame 0</div>
+            <canvas class="frame-canvas" id="jump-0" width="150" height="256"></canvas>
+            <div class="frame-controls">
+                <label>X:</label><input type="number" id="jump-0-x" value="0" onchange="updateFrame('jump', 0)">
+                <label>Y:</label><input type="number" id="jump-0-y" value="768" onchange="updateFrame('jump', 0)"><br>
+                <label>W:</label><input type="number" id="jump-0-w" value="150" onchange="updateFrame('jump', 0)">
+                <label>H:</label><input type="number" id="jump-0-h" value="256" onchange="updateFrame('jump', 0)">
+            </div>
+        </div>
+        <div class="frame-container">
+            <div class="frame-label">Frame 1</div>
+            <canvas class="frame-canvas" id="jump-1" width="150" height="256"></canvas>
+            <div class="frame-controls">
+                <label>X:</label><input type="number" id="jump-1-x" value="150" onchange="updateFrame('jump', 1)">
+                <label>Y:</label><input type="number" id="jump-1-y" value="768" onchange="updateFrame('jump', 1)"><br>
+                <label>W:</label><input type="number" id="jump-1-w" value="150" onchange="updateFrame('jump', 1)">
+                <label>H:</label><input type="number" id="jump-1-h" value="256" onchange="updateFrame('jump', 1)">
+            </div>
+        </div>
+        <div class="frame-container">
+            <div class="frame-label">Frame 2</div>
+            <canvas class="frame-canvas" id="jump-2" width="150" height="256"></canvas>
+            <div class="frame-controls">
+                <label>X:</label><input type="number" id="jump-2-x" value="300" onchange="updateFrame('jump', 2)">
+                <label>Y:</label><input type="number" id="jump-2-y" value="768" onchange="updateFrame('jump', 2)"><br>
+                <label>W:</label><input type="number" id="jump-2-w" value="150" onchange="updateFrame('jump', 2)">
+                <label>H:</label><input type="number" id="jump-2-h" value="256" onchange="updateFrame('jump', 2)">
+            </div>
+        </div>
+        <div class="frame-container">
+            <div class="frame-label">Frame 3</div>
+            <canvas class="frame-canvas" id="jump-3" width="150" height="256"></canvas>
+            <div class="frame-controls">
+                <label>X:</label><input type="number" id="jump-3-x" value="450" onchange="updateFrame('jump', 3)">
+                <label>Y:</label><input type="number" id="jump-3-y" value="768" onchange="updateFrame('jump', 3)"><br>
+                <label>W:</label><input type="number" id="jump-3-w" value="150" onchange="updateFrame('jump', 3)">
+                <label>H:</label><input type="number" id="jump-3-h" value="256" onchange="updateFrame('jump', 3)">
+            </div>
+        </div>
+        <div class="frame-container">
+            <div class="frame-label">Frame 4</div>
+            <canvas class="frame-canvas" id="jump-4" width="150" height="256"></canvas>
+            <div class="frame-controls">
+                <label>X:</label><input type="number" id="jump-4-x" value="600" onchange="updateFrame('jump', 4)">
+                <label>Y:</label><input type="number" id="jump-4-y" value="768" onchange="updateFrame('jump', 4)"><br>
+                <label>W:</label><input type="number" id="jump-4-w" value="150" onchange="updateFrame('jump', 4)">
+                <label>H:</label><input type="number" id="jump-4-h" value="256" onchange="updateFrame('jump', 4)">
+            </div>
+        </div>
+    </div>
+
+    <div id="coordinates-output" style="margin-top: 20px; padding: 10px; background-color: white; border: 1px solid #ccc; font-family: monospace; white-space: pre-wrap;"></div>
+
+    <script>
+        let spriteImage = new Image();
+        spriteImage.src = 'duck2.png';
+        
+        spriteImage.onload = function() {
+            console.log('Sprite loaded successfully');
+            loadSavedCoordinates();
+            updateAllFrames();
+        };
+        
+        spriteImage.onerror = function() {
+            console.error('Failed to load sprite image');
+        };
+
+        function loadSavedCoordinates() {
+            // First try to load from the game file
+            fetch('http://localhost:3001/get-frame-data')
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success && result.data) {
+                        const data = result.data;
+                        console.log('Loaded frame data from game file:', data);
+                        
+                        // Load walk frames
+                        for (let i = 0; i < 5; i++) {
+                            if (data.walk && data.walk[i]) {
+                                document.getElementById(`walk-${i}-x`).value = data.walk[i].x;
+                                document.getElementById(`walk-${i}-y`).value = data.walk[i].y;
+                                document.getElementById(`walk-${i}-w`).value = data.walk[i].width;
+                                document.getElementById(`walk-${i}-h`).value = data.walk[i].height;
+                            }
+                        }
+                        
+                        // Load run frames
+                        for (let i = 0; i < 5; i++) {
+                            if (data.run && data.run[i]) {
+                                document.getElementById(`run-${i}-x`).value = data.run[i].x;
+                                document.getElementById(`run-${i}-y`).value = data.run[i].y;
+                                document.getElementById(`run-${i}-w`).value = data.run[i].width;
+                                document.getElementById(`run-${i}-h`).value = data.run[i].height;
+                            }
+                        }
+                        
+                        // Load jump frames
+                        for (let i = 0; i < 5; i++) {
+                            if (data.jump && data.jump[i]) {
+                                document.getElementById(`jump-${i}-x`).value = data.jump[i].x;
+                                document.getElementById(`jump-${i}-y`).value = data.jump[i].y;
+                                document.getElementById(`jump-${i}-w`).value = data.jump[i].width;
+                                document.getElementById(`jump-${i}-h`).value = data.jump[i].height;
+                            }
+                        }
+                        
+                        // Update all frames after loading
+                        updateAllFramesFromInputs();
+                    } else {
+                        console.error('Failed to load frame data from game file:', result.error);
+                        loadFromLocalStorage();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading frame data from game file:', error);
+                    loadFromLocalStorage();
+                });
+        }
+        
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('duckSpriteCoordinates');
+            if (saved) {
+                const data = JSON.parse(saved);
+                console.log('Loaded frame data from localStorage as fallback:', data);
+                
+                // Load walk frames
+                for (let i = 0; i < 5; i++) {
+                    if (data.walk && data.walk[i]) {
+                        document.getElementById(`walk-${i}-x`).value = data.walk[i].x;
+                        document.getElementById(`walk-${i}-y`).value = data.walk[i].y;
+                        document.getElementById(`walk-${i}-w`).value = data.walk[i].width;
+                        document.getElementById(`walk-${i}-h`).value = data.walk[i].height;
+                    }
+                }
+                
+                // Load run frames
+                for (let i = 0; i < 5; i++) {
+                    if (data.run && data.run[i]) {
+                        document.getElementById(`run-${i}-x`).value = data.run[i].x;
+                        document.getElementById(`run-${i}-y`).value = data.run[i].y;
+                        document.getElementById(`run-${i}-w`).value = data.run[i].width;
+                        document.getElementById(`run-${i}-h`).value = data.run[i].height;
+                    }
+                }
+                
+                // Load jump frames
+                for (let i = 0; i < 5; i++) {
+                    if (data.jump && data.jump[i]) {
+                        document.getElementById(`jump-${i}-x`).value = data.jump[i].x;
+                        document.getElementById(`jump-${i}-y`).value = data.jump[i].y;
+                        document.getElementById(`jump-${i}-w`).value = data.jump[i].width;
+                        document.getElementById(`jump-${i}-h`).value = data.jump[i].height;
+                    }
+                }
+                
+                updateAllFramesFromInputs();
+            } else {
+                console.log('No saved coordinates found in localStorage');
+            }
+        }
+
+        function saveCoordinates() {
+            const data = {
+                walk: [],
+                run: [],
+                jump: []
+            };
+            
+            // Save walk frames
+            for (let i = 0; i < 5; i++) {
+                data.walk.push({
+                    x: parseInt(document.getElementById(`walk-${i}-x`).value),
+                    y: parseInt(document.getElementById(`walk-${i}-y`).value),
+                    width: parseInt(document.getElementById(`walk-${i}-w`).value),
+                    height: parseInt(document.getElementById(`walk-${i}-h`).value)
+                });
+            }
+            
+            // Save run frames
+            for (let i = 0; i < 5; i++) {
+                data.run.push({
+                    x: parseInt(document.getElementById(`run-${i}-x`).value),
+                    y: parseInt(document.getElementById(`run-${i}-y`).value),
+                    width: parseInt(document.getElementById(`run-${i}-w`).value),
+                    height: parseInt(document.getElementById(`run-${i}-h`).value)
+                });
+            }
+            
+            // Save jump frames
+            for (let i = 0; i < 5; i++) {
+                data.jump.push({
+                    x: parseInt(document.getElementById(`jump-${i}-x`).value),
+                    y: parseInt(document.getElementById(`jump-${i}-y`).value),
+                    width: parseInt(document.getElementById(`jump-${i}-w`).value),
+                    height: parseInt(document.getElementById(`jump-${i}-h`).value)
+                });
+            }
+            
+            localStorage.setItem('duckSpriteCoordinates', JSON.stringify(data));
+            return data;
+        }
+
+        function updateGameCode(data) {
+            // Generate the TypeScript code for the game
+            const gameCode = generateGameCode(data);
+            
+            // Send the code to the server to update the Duck.ts file
+            fetch('http://localhost:3001/update-duck-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ code: gameCode })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    console.log('Game code updated successfully');
+                    document.getElementById('status-message').textContent = 'Game code updated! Refresh your game to see changes.';
+                    document.getElementById('status-message').style.color = 'green';
+                } else {
+                    console.error('Failed to update game code:', result.error);
+                    document.getElementById('status-message').textContent = 'Failed to update game code: ' + result.error;
+                    document.getElementById('status-message').style.color = 'red';
+                }
+            })
+            .catch(error => {
+                console.error('Error updating game code:', error);
+                document.getElementById('status-message').textContent = 'Error updating game code. Code copied to clipboard instead.';
+                document.getElementById('status-message').style.color = 'orange';
+                
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(gameCode).then(() => {
+                    document.getElementById('status-message').textContent += ' Code copied to clipboard!';
+                });
+            });
+        }
+
+        function generateGameCode(data) {
+            let code = `// Auto-generated sprite frame data\n`;
+            code += `const walkFrameData = [\n`;
+            data.walk.forEach((frame, i) => {
+                code += `    { x: ${frame.x}, y: ${frame.y}, width: ${frame.width}, height: ${frame.height} },    // frame ${i}\n`;
+            });
+            code += `];\n\n`;
+            
+            code += `const runFrameData = [\n`;
+            data.run.forEach((frame, i) => {
+                code += `    { x: ${frame.x}, y: ${frame.y}, width: ${frame.width}, height: ${frame.height} },    // frame ${i}\n`;
+            });
+            code += `];\n\n`;
+            
+            code += `const jumpFrameData = [\n`;
+            data.jump.forEach((frame, i) => {
+                code += `    { x: ${frame.x}, y: ${frame.y}, width: ${frame.width}, height: ${frame.height} },    // frame ${i}\n`;
+            });
+            code += `];`;
+            
+            return code;
+        }
+
+        function updateAllFramesFromInputs() {
+            // Update all frames based on current input values
+            for (let i = 0; i < 5; i++) {
+                updateFrame('walk', i);
+                updateFrame('run', i);
+                updateFrame('jump', i);
+            }
+        }
+
+        function updateAllFrames() {
+            const frameX = parseInt(document.getElementById('frameX').value);
+            const frameY = parseInt(document.getElementById('frameY').value);
+            const frameWidth = parseInt(document.getElementById('frameWidth').value);
+            const frameHeight = parseInt(document.getElementById('frameHeight').value);
+
+            // Update individual frame controls
+            for (let i = 0; i < 5; i++) {
+                document.getElementById(`walk-${i}-x`).value = frameX + (i * frameWidth);
+                document.getElementById(`walk-${i}-y`).value = frameY;
+                document.getElementById(`walk-${i}-w`).value = frameWidth;
+                document.getElementById(`walk-${i}-h`).value = frameHeight;
+                updateFrame('walk', i);
+
+                document.getElementById(`run-${i}-x`).value = frameX + (i * frameWidth);
+                document.getElementById(`run-${i}-y`).value = frameY + frameHeight;
+                document.getElementById(`run-${i}-w`).value = frameWidth;
+                document.getElementById(`run-${i}-h`).value = frameHeight;
+                updateFrame('run', i);
+
+                document.getElementById(`jump-${i}-x`).value = frameX + (i * frameWidth);
+                document.getElementById(`jump-${i}-y`).value = frameY + (frameHeight * 3);
+                document.getElementById(`jump-${i}-w`).value = frameWidth;
+                document.getElementById(`jump-${i}-h`).value = frameHeight;
+                updateFrame('jump', i);
+            }
+        }
+
+        function updateFrame(animType, frameIndex) {
+            const x = parseInt(document.getElementById(`${animType}-${frameIndex}-x`).value);
+            const y = parseInt(document.getElementById(`${animType}-${frameIndex}-y`).value);
+            const w = parseInt(document.getElementById(`${animType}-${frameIndex}-w`).value);
+            const h = parseInt(document.getElementById(`${animType}-${frameIndex}-h`).value);
+            
+            // Update canvas size to match frame dimensions (with a max size for display)
+            const canvas = document.getElementById(`${animType}-${frameIndex}`);
+            const maxDisplaySize = 150;
+            const scale = Math.min(maxDisplaySize / w, maxDisplaySize / h, 1);
+            
+            canvas.width = w * scale;
+            canvas.height = h * scale;
+            
+            drawFrame(`${animType}-${frameIndex}`, x, y, w, h);
+        }
+
+        function drawFrame(canvasId, sx, sy, sw, sh) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw the frame at the canvas size (maintaining aspect ratio)
+            ctx.drawImage(spriteImage, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+            
+            // Draw border around the extracted area
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function exportCoordinates() {
+            const data = saveCoordinates();
+            updateGameCode(data);
+            
+            let output = "// Walk Animation Frames\n";
+            output += "const walkFrameData = [\n";
+            for (let i = 0; i < 5; i++) {
+                const x = parseInt(document.getElementById(`walk-${i}-x`).value);
+                const y = parseInt(document.getElementById(`walk-${i}-y`).value);
+                const w = parseInt(document.getElementById(`walk-${i}-w`).value);
+                const h = parseInt(document.getElementById(`walk-${i}-h`).value);
+                output += `    { x: ${x}, y: ${y}, width: ${w}, height: ${h} },    // frame ${i}\n`;
+            }
+            output += "];\n\n";
+
+            output += "// Run Animation Frames\n";
+            output += "const runFrameData = [\n";
+            for (let i = 0; i < 5; i++) {
+                const x = parseInt(document.getElementById(`run-${i}-x`).value);
+                const y = parseInt(document.getElementById(`run-${i}-y`).value);
+                const w = parseInt(document.getElementById(`run-${i}-w`).value);
+                const h = parseInt(document.getElementById(`run-${i}-h`).value);
+                output += `    { x: ${x}, y: ${y}, width: ${w}, height: ${h} },    // frame ${i}\n`;
+            }
+            output += "];\n\n";
+
+            output += "// Jump Animation Frames\n";
+            output += "const jumpFrameData = [\n";
+            for (let i = 0; i < 5; i++) {
+                const x = parseInt(document.getElementById(`jump-${i}-x`).value);
+                const y = parseInt(document.getElementById(`jump-${i}-y`).value);
+                const w = parseInt(document.getElementById(`jump-${i}-w`).value);
+                const h = parseInt(document.getElementById(`jump-${i}-h`).value);
+                output += `    { x: ${x}, y: ${y}, width: ${w}, height: ${h} },    // frame ${i}\n`;
+            }
+            output += "];";
+
+            document.getElementById('coordinates-output').textContent = output;
+        }
+
+        function autoSave() {
+            saveCoordinates();
+            document.getElementById('status-message').textContent = 'Auto-saved coordinates';
+            document.getElementById('status-message').style.color = 'blue';
+            
+            // Clear the message after 2 seconds
+            setTimeout(() => {
+                document.getElementById('status-message').textContent = '';
+            }, 2000);
+        }
+    </script>
+</body>
+</html> 
