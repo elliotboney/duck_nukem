@@ -1,5 +1,32 @@
 ---
-description:
-globs:
+description: Our project structure, so when we create new files, etc
+globs: 
 alwaysApply: false
 ---
+# Project Structure Guide
+
+The game follows a modular architecture with clear separation of concerns:
+
+## Core Files
+- Main entry point: [src/index.ts](mdc:src/index.ts)
+- Game engine: [src/game/core/Game.ts](mdc:src/game/core/Game.ts)
+- Input handling: [src/game/core/InputHandler.ts](mdc:src/game/core/InputHandler.ts)
+
+## Game Entities
+- Player character: [src/game/entities/Duck.ts](mdc:src/game/entities/Duck.ts)
+
+## Configuration
+- TypeScript config: [tsconfig.json](mdc:tsconfig.json)
+- Webpack config: [webpack.config.js](mdc:webpack.config.js)
+- ESLint config: [.eslintrc.json](mdc:.eslintrc.json)
+
+## Documentation
+- Project overview: [README.md](mdc:README.md)
+- Development tasks: [todo.md](mdc:todo.md)
+
+## Development Workflow
+1. Run `npm start` to launch development server
+2. Code changes will automatically reload
+3. Use `npm run build` for production builds
+4. Run `npm test` for testing
+5. Use `npm run lint` to check code quality

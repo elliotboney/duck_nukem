@@ -1,5 +1,37 @@
 ---
-description:
-globs:
+description: The architecture of how our game is made
+globs: 
 alwaysApply: false
 ---
+# Game Architecture Guide
+
+## Game Loop
+The game uses a standard game loop pattern implemented in [Game.ts](mdc:src/game/core/Game.ts):
+1. Update game state
+2. Process input
+3. Render frame
+4. Repeat
+
+## Entity System
+Game entities follow a common pattern:
+- Position (x, y)
+- Update method for game logic
+- Render method for drawing
+
+Example: [Duck.ts](mdc:src/game/entities/Duck.ts) implements:
+- Movement physics
+- Input handling
+- Basic rendering
+
+## Input System
+The [InputHandler.ts](mdc:src/game/core/InputHandler.ts) manages:
+- Keyboard input
+- Movement controls
+- Action controls (jump, shoot)
+
+## Development Guidelines
+1. Keep game logic in update methods
+2. Separate rendering from game logic
+3. Use TypeScript for type safety
+4. Follow the established entity pattern
+5. Document new features
