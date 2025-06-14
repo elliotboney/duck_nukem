@@ -1,0 +1,193 @@
+# Parker Duck - Cursor AI Rules
+
+## Documentation Standards
+
+### JSDoc Requirements
+- **ALL classes, methods, and functions MUST have comprehensive JSDoc documentation**
+- **ALL public APIs MUST include @param and @returns tags**
+- **ALL complex algorithms or business logic MUST include detailed explanations**
+- **ALL file-level documentation MUST include @fileoverview**
+
+### JSDoc Format Standards
+```typescript
+/**
+ * Brief description of the class/function/method.
+ * More detailed explanation if needed, including features and capabilities.
+ * 
+ * @param paramName - Description of parameter
+ * @param optionalParam - Description (default: value)
+ * @returns Description of return value
+ * @throws Description of exceptions that may be thrown
+ * @example
+ * ```typescript
+ * // Usage example
+ * const instance = new MyClass(param);
+ * ```
+ */
+```
+
+### Class Documentation Requirements
+- Class-level JSDoc MUST include:
+  - Purpose and responsibilities
+  - Key features list
+  - Architecture notes
+  - Usage example
+  - Dependencies and relationships
+
+### Method Documentation Requirements
+- All public methods MUST document:
+  - Purpose and behavior
+  - All parameters with types and descriptions
+  - Return values with types and descriptions
+  - Side effects or state changes
+  - Error conditions
+
+### Property Documentation Requirements
+- All class properties MUST have inline documentation:
+  - Purpose and usage
+  - Units for numeric values (pixels, milliseconds, etc.)
+  - Valid ranges or constraints
+
+## Code Quality Standards
+
+### TypeScript Standards
+- Use strict TypeScript configuration
+- Prefer explicit types over `any`
+- Use interfaces for object shapes
+- Use enums for constants with semantic meaning
+- Use readonly for immutable properties
+
+### Game Development Patterns
+- Use delta time for frame-rate independent updates
+- Separate update and render logic
+- Use composition over inheritance for game entities
+- Implement proper resource loading with callbacks
+- Use consistent coordinate systems (pixels)
+
+### Performance Guidelines
+- Minimize object creation in game loops
+- Use object pooling for frequently created/destroyed objects
+- Cache expensive calculations
+- Use requestAnimationFrame for smooth rendering
+- Profile and optimize hot paths
+
+### File Organization
+- Group related functionality in modules
+- Use barrel exports (index.ts) for clean imports
+- Separate concerns: entities, systems, utilities
+- Keep files focused and under 500 lines when possible
+
+### Animation System Standards
+- Use consistent frame timing (milliseconds)
+- Document sprite sheet layouts and dimensions
+- Use descriptive animation state constants
+- Implement proper animation state transitions
+- Support both looping and non-looping animations
+
+### Input Handling Standards
+- Centralize input handling in InputHandler class
+- Support multiple key bindings per action
+- Use semantic method names (isJumping vs isKeyPressed)
+- Document all supported controls
+
+### Error Handling
+- Use try-catch blocks for file operations
+- Provide meaningful error messages
+- Log errors with context information
+- Gracefully handle missing resources
+
+## Development Workflow
+
+### Testing Requirements
+- Test sprite coordinate changes with development server
+- Verify animations at different frame rates
+- Test input responsiveness across browsers
+- Validate resource loading error handling
+
+### Documentation Updates
+- Update session_context.md for major changes
+- Update animations.md for sprite/animation changes
+- Keep README.md current with setup instructions
+- Document breaking changes and migration paths
+
+### Code Review Checklist
+- [ ] All new code has comprehensive JSDoc
+- [ ] Public APIs are properly documented
+- [ ] Examples are provided for complex usage
+- [ ] Error conditions are documented
+- [ ] Performance implications are considered
+- [ ] TypeScript types are explicit and correct
+
+## Project-Specific Guidelines
+
+### Sprite Management
+- Use consistent naming: duck_[action].png
+- Document sprite dimensions and frame counts
+- Use frame data arrays for coordinate mapping
+- Support horizontal mirroring for directional sprites
+
+### Physics and Movement
+- Use consistent units (pixels/second, pixels/second²)
+- Document physics constants and their effects
+- Implement frame-rate independent movement
+- Use delta time for all time-based calculations
+
+### Game Architecture
+- Maintain separation between game logic and rendering
+- Use dependency injection for testability
+- Keep game state immutable where possible
+- Document entity lifecycle and state transitions
+
+## Sequential Thinking Usage
+
+### When to Use Sequential Thinking MCP
+- **Complex Architecture Decisions**: Planning new systems, choosing between implementation approaches
+- **Debugging Complex Issues**: Multi-step problems requiring systematic analysis
+- **Feature Design**: Balancing game mechanics, considering user experience implications
+- **Performance Optimization**: Analyzing bottlenecks and optimization strategies
+- **Trade-off Analysis**: Weighing pros and cons of different technical decisions
+
+### Sequential Thinking Guidelines
+- Use for problems requiring more than 2-3 steps of analysis
+- Break down complex game development challenges systematically
+- Consider multiple approaches before implementation
+- Document reasoning process for future reference
+- Revise thinking when new information emerges
+
+### Game Development Use Cases
+- Enemy AI system design and behavior patterns
+- Level progression and difficulty balancing
+- Animation state machine architecture
+- Physics system optimization
+- Resource loading and memory management strategies
+
+## Session Context Management
+
+### Session Context Requirements
+- **MUST update session_context.md after every major change or feature addition**
+- **MUST review session_context.md at start of each development session**
+- **MUST document architectural decisions and their reasoning**
+- **MUST track pending issues and next steps**
+
+### What to Document in Session Context
+- Major accomplishments and changes made
+- Technical decisions and their rationale
+- Current system architecture and dependencies
+- Known issues and their status (resolved/pending)
+- Next steps and development priorities
+- Commands and workflows for resuming work
+
+### Session Context Update Triggers
+- New features implemented
+- Bug fixes completed
+- Architecture changes made
+- Performance optimizations applied
+- Documentation updates finished
+- Development workflow changes
+
+## Enforcement
+- All pull requests MUST pass JSDoc validation
+- Code without proper documentation will be rejected
+- Examples MUST be tested and functional
+- Documentation MUST be updated with code changes
+- Session context MUST be updated for significant changes 

@@ -1,14 +1,46 @@
+/**
+ * @fileoverview Update server for Parker Duck game development.
+ * Provides API endpoints for reading and updating sprite frame coordinates
+ * in the Duck.ts file during development and testing.
+ * 
+ * Features:
+ * - Real-time frame data extraction from Duck.ts
+ * - Dynamic code updating for sprite coordinates
+ * - CORS support for cross-origin requests
+ * - Error handling and validation
+ * 
+ * Endpoints:
+ * - GET /get-frame-data: Retrieves current frame coordinates
+ * - POST /update-duck-code: Updates Duck.ts with new coordinates
+ * 
+ * @author Parker Duck Development Team
+ * @version 1.0.0
+ */
+
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
 
 const app = express();
+/** Port number for the update server */
 const PORT = 3001;
 
+// Middleware setup
 app.use(cors());
 app.use(express.json());
 
+/**
+ * GET /get-frame-data
+ * Retrieves current sprite frame coordinates from Duck.ts file.
+ * Parses the file to extract walkFrameData, runFrameData, and jumpFrameData arrays.
+ * 
+ * @route GET /get-frame-data
+ * @returns {Object} JSON response with frame data for all animation types
+ * @returns {boolean} success - Whether the operation succeeded
+ * @returns {Object} data - Frame data organized by animation type (walk, run, jump)
+ * @returns {string} error - Error message if operation failed
+ */
 app.get('/get-frame-data', (req, res) => {
     try {
         const duckFilePath = path.join(__dirname, 'src/game/entities/Duck.ts');
@@ -89,6 +121,19 @@ app.get('/get-frame-data', (req, res) => {
     }
 });
 
+/**
+ * POST /update-duck-code
+ * Updates the Duck.ts file with new sprite frame coordinates.
+ * Replaces existing frame data arrays or inserts new ones if they don't exist.
+ * 
+ * @route POST /update-duck-code
+ * @param {Object} req.body - Request body containing the updated code
+ * @param {string} req.body.code - Generated TypeScript code with frame data arrays
+ * @returns {Object} JSON response indicating success or failure
+ * @returns {boolean} success - Whether the update succeeded
+ * @returns {string} message - Success message
+ * @returns {string} error - Error message if operation failed
+ */
 app.post('/update-duck-code', (req, res) => {
     try {
         const { code } = req.body;
@@ -159,6 +204,10 @@ app.post('/update-duck-code', (req, res) => {
     }
 });
 
+/**
+ * Start the Express server on the specified port.
+ * Logs server startup information to console.
+ */
 app.listen(PORT, () => {
     console.log(`Update server running on http://localhost:${PORT}`);
 });
