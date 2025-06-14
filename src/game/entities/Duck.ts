@@ -1,10 +1,14 @@
 import { InputHandler } from '../core/InputHandler';
 import { Animation } from '../utils/Animation';
 import duckWalkingSprite from '../../assets/images/duck_walking.png';
+import duckRunningSprite from '../../assets/images/duck_running.png';
 import duckJumpingSprite from '../../assets/images/duck_jumping.png';
 
 /** Animation frame duration for walking animation in milliseconds */
 const FRAME_DURATION_WALK = 60;
+
+/** Animation frame duration for running animation in milliseconds */
+const FRAME_DURATION_RUN = 40;
 
 /** Animation frame duration for jumping animation in milliseconds */
 const FRAME_DURATION_JUMP = 10;
@@ -12,8 +16,11 @@ const FRAME_DURATION_JUMP = 10;
 /** Animation type identifier for walking animation */
 const ANIM_WALK = 0;
 
+/** Animation type identifier for running animation */
+const ANIM_RUN = 1;
+
 /** Animation type identifier for jumping animation */
-const ANIM_JUMP = 1;
+const ANIM_JUMP = 2;
 
 /**
  * Duck character class representing the main player character.
@@ -21,9 +28,11 @@ const ANIM_JUMP = 1;
  * 
  * Features:
  * - Physics-based movement with gravity and ground collision
- * - Multiple animation states (walking, jumping)
+ * - Multiple animation states (walking, running, jumping)
  * - Horizontal sprite mirroring for left/right movement
- * - Dual sprite system for different animation types
+ * - Triple sprite system for different animation types
+ * - Running speed boost when holding Shift key
+ * - Camera-compatible coordinate system
  * 
  * @example
  * ```typescript
@@ -32,7 +41,7 @@ const ANIM_JUMP = 1;
  * 
  * // In game loop
  * duck.update(deltaTime);
- * duck.render(ctx);
+ * duck.render(ctx, camera);
  * ```
  */
 export class Duck {
@@ -69,6 +78,9 @@ export class Duck {
     /** Sprite image for walking animation */
     private walkingSprite: HTMLImageElement;
     
+    /** Sprite image for running animation */
+    private runningSprite: HTMLImageElement;
+    
     /** Sprite image for jumping animation */
     private jumpingSprite: HTMLImageElement;
     
@@ -87,10 +99,13 @@ export class Duck {
     /** Whether the walking sprite has finished loading */
     private walkingLoaded: boolean = false;
     
+    /** Whether the running sprite has finished loading */
+    private runningLoaded: boolean = false;
+    
     /** Whether the jumping sprite has finished loading */
     private jumpingLoaded: boolean = false;
     
-    /** Current animation type (ANIM_WALK or ANIM_JUMP) */
+    /** Current animation type (ANIM_WALK, ANIM_RUN, or ANIM_JUMP) */
     private currentAnimType: number = ANIM_WALK;
     
     /** Rendering scale factor (currently unused) */
@@ -117,6 +132,15 @@ export class Duck {
         this.walkingSprite.onload = () => {
             console.log('Walking sprite loaded:', this.walkingSprite.width, this.walkingSprite.height);
             this.walkingLoaded = true;
+            this.initializeAnimation();
+        };
+        
+        // Initialize running sprite
+        this.runningSprite = new window.Image();
+        this.runningSprite.src = duckRunningSprite;
+        this.runningSprite.onload = () => {
+            console.log('Running sprite loaded:', this.runningSprite.width, this.runningSprite.height);
+            this.runningLoaded = true;
             this.initializeAnimation();
         };
         
@@ -153,10 +177,10 @@ export class Duck {
     }
     
     /**
-     * Switches between different animation types (walking/jumping).
+     * Switches between different animation types (walking/running/jumping).
      * Updates the current sprite and creates a new Animation instance with appropriate settings.
      * 
-     * @param newAnimType - The animation type to switch to (ANIM_WALK or ANIM_JUMP)
+     * @param newAnimType - The animation type to switch to (ANIM_WALK, ANIM_RUN, or ANIM_JUMP)
      * @private
      */
     private switchAnimation(newAnimType: number): void {
@@ -171,6 +195,16 @@ export class Duck {
                 0, // row 0
                 7, // 7 frames
                 FRAME_DURATION_WALK
+            );
+        } else if (newAnimType === ANIM_RUN && this.runningLoaded) {
+            this.currentSprite = this.runningSprite;
+            this.animation = new Animation(
+                this.runningSprite,
+                this.frameWidth,
+                this.frameHeight,
+                0, // row 0
+                4, // 4 frames
+                FRAME_DURATION_RUN
             );
         } else if (newAnimType === ANIM_JUMP && this.jumpingLoaded) {
             this.currentSprite = this.jumpingSprite;
@@ -191,8 +225,9 @@ export class Duck {
      * Called once per frame by the game loop.
      * 
      * @param deltaTime - Time elapsed since last frame in milliseconds
+     * @param ground - Ground system for collision detection (optional)
      */
-    public update(deltaTime: number): void {
+    public update(deltaTime: number, ground?: any): void {
         // Convert deltaTime to seconds
         const dt = deltaTime / 1000;
 
@@ -226,11 +261,23 @@ export class Duck {
         this.x += this.velocityX * dt;
         this.y += this.velocityY * dt;
 
-        // Simple ground collision
-        if (this.y > 500) { // Ground level
-            this.y = 500;
-            this.velocityY = 0;
-            this.isJumping = false;
+        // Ground collision - use Ground system if provided, otherwise fallback
+        if (ground) {
+            // Check if duck's bottom edge touches or goes below ground
+            const duckBottom = this.y + this.frameHeight / 2;
+            if (duckBottom >= ground.getGroundLevel()) {
+                this.y = ground.getGroundLevel() - this.frameHeight / 2;
+                this.velocityY = 0;
+                this.isJumping = false;
+            }
+        } else {
+            // Fallback ground collision for backward compatibility
+            const duckBottom = this.y + this.frameHeight / 2;
+            if (duckBottom >= 450) {
+                this.y = 450 - this.frameHeight / 2;
+                this.velocityY = 0;
+                this.isJumping = false;
+            }
         }
 
         // Animation switching
@@ -240,7 +287,8 @@ export class Duck {
             if (this.isJumping) {
                 newAnimType = ANIM_JUMP;
             } else if (moving) {
-                newAnimType = ANIM_WALK;
+                // Choose between walking and running based on shift key
+                newAnimType = running ? ANIM_RUN : ANIM_WALK;
             }
             
             // Switch animation if needed
@@ -258,7 +306,7 @@ export class Duck {
                 }
                 // If on last frame, freeze there until landing
             } else if (moving) {
-                // Normal walking animation
+                // Normal walking or running animation
                 this.animation.update(deltaTime);
             } else {
                 // Idle: set to first frame of walk animation
@@ -269,19 +317,28 @@ export class Duck {
     }
 
     /**
-     * Renders the duck sprite to the canvas with proper animation frame and horizontal mirroring.
-     * Includes debug frame visualization and handles sprite flipping for left-facing movement.
+     * Renders the duck sprite to the canvas with proper camera transformation.
      * 
      * @param ctx - The 2D rendering context of the canvas
+     * @param camera - Camera for coordinate transformation (optional)
      */
-    public render(ctx: CanvasRenderingContext2D): void {
+    public render(ctx: CanvasRenderingContext2D, camera?: any): void {
         if (this.animation && this.frameWidth && this.frameHeight && this.currentSprite) {
+            // Calculate screen position
+            let screenX = this.x;
+            let screenY = this.y;
+            
+            if (camera) {
+                screenX = camera.worldToScreenX(this.x);
+                screenY = camera.worldToScreenY(this.y);
+            }
+
             // Draw debug frame
             ctx.save();
             ctx.strokeStyle = 'red';
             ctx.strokeRect(
-                this.x - this.frameWidth / 2,
-                this.y - this.frameHeight / 2,
+                screenX - this.frameWidth / 2,
+                screenY - this.frameHeight / 2,
                 this.frameWidth,
                 this.frameHeight
             );
@@ -314,6 +371,22 @@ export class Duck {
                         sw = frameData.width;
                         sh = frameData.height;
                     }
+                } else if (this.currentAnimType === ANIM_RUN) {
+                    // Running animation frames - 4 frames, each 76x90 pixels
+                    const runFrameData = [
+                        { x: 0, y: 0, width: 76, height: 90 },      // frame 0
+                        { x: 76, y: 0, width: 76, height: 90 },     // frame 1
+                        { x: 152, y: 0, width: 76, height: 90 },    // frame 2
+                        { x: 228, y: 0, width: 76, height: 90 },    // frame 3
+                    ];
+                    
+                    if (frame < runFrameData.length) {
+                        const frameData = runFrameData[frame];
+                        sx = frameData.x;
+                        sy = frameData.y;
+                        sw = frameData.width;
+                        sh = frameData.height;
+                    }
                 } else if (this.currentAnimType === ANIM_JUMP) {
                     // Jumping animation frames - 8 columns x 2 rows, each 76x90 pixels
                     const jumpFrameData = [];
@@ -341,7 +414,7 @@ export class Duck {
             }
 
             // Draw just the duck artwork at a reasonable scale
-            const drawScale = 1; // Reduce scale to make duck reasonable size
+            const drawScale = 1;
             const drawWidth = sw * drawScale;
             const drawHeight = sh * drawScale;
             
@@ -354,8 +427,8 @@ export class Duck {
                 ctx.drawImage(
                     this.currentSprite,
                     sx, sy, sw, sh,
-                    -(this.x + drawWidth / 2),  // Flip the x position
-                    this.y - drawHeight / 2,
+                    -(screenX + drawWidth / 2),  // Flip the x position
+                    screenY - drawHeight / 2,
                     drawWidth,
                     drawHeight
                 );
@@ -363,8 +436,8 @@ export class Duck {
                 ctx.drawImage(
                     this.currentSprite,
                     sx, sy, sw, sh,
-                    this.x - drawWidth / 2,
-                    this.y - drawHeight / 2,
+                    screenX - drawWidth / 2,
+                    screenY - drawHeight / 2,
                     drawWidth,
                     drawHeight
                 );
@@ -374,8 +447,63 @@ export class Duck {
             ctx.restore();
         } else {
             // Draw placeholder while loading
+            let screenX = this.x;
+            let screenY = this.y;
+            
+            if (camera) {
+                screenX = camera.worldToScreenX(this.x);
+                screenY = camera.worldToScreenY(this.y);
+            }
+            
             ctx.fillStyle = 'white';
-            ctx.fillRect(this.x, this.y, 50, 50);
+            ctx.fillRect(screenX, screenY, 50, 50);
         }
+    }
+
+    /**
+     * Gets the current X position in world coordinates.
+     * 
+     * @returns Current X position
+     */
+    public getX(): number {
+        return this.x;
+    }
+
+    /**
+     * Gets the current Y position in world coordinates.
+     * 
+     * @returns Current Y position
+     */
+    public getY(): number {
+        return this.y;
+    }
+
+    /**
+     * Gets the width of the duck sprite.
+     * 
+     * @returns Duck width in pixels
+     */
+    public getWidth(): number {
+        return this.frameWidth;
+    }
+
+    /**
+     * Gets the height of the duck sprite.
+     * 
+     * @returns Duck height in pixels
+     */
+    public getHeight(): number {
+        return this.frameHeight;
+    }
+
+    /**
+     * Sets the duck's position in world coordinates.
+     * 
+     * @param x - New X position
+     * @param y - New Y position
+     */
+    public setPosition(x: number, y: number): void {
+        this.x = x;
+        this.y = y;
     }
 } 

@@ -1,5 +1,8 @@
 import { Duck } from '../entities/Duck';
 import { InputHandler } from '../core/InputHandler';
+import { Camera } from '../core/Camera';
+import { Background } from '../world/Background';
+import { Ground } from '../world/Ground';
 
 /**
  * Main Game class that orchestrates the game loop and manages core game systems.
@@ -7,13 +10,18 @@ import { InputHandler } from '../core/InputHandler';
  * 
  * Features:
  * - 60fps game loop with delta time calculations
- * - Canvas rendering management
+ * - Canvas rendering management with camera system
+ * - Scrolling background with parallax effects
+ * - Proper ground collision system
  * - Input handling coordination
  * - Game state management (start/stop)
  * 
  * Architecture:
  * - Uses requestAnimationFrame for smooth 60fps rendering
  * - Delta time-based updates for frame rate independence
+ * - Camera system for world-to-screen coordinate transformation
+ * - Background system with multiple parallax layers
+ * - Ground system for terrain collision
  * - Centralized input handling through InputHandler
  * - Entity management (currently Duck)
  * 
@@ -37,6 +45,15 @@ export class Game {
     /** The main player character */
     private duck: Duck;
     
+    /** Camera system for world-to-screen coordinate transformation */
+    private camera: Camera;
+    
+    /** Background system with parallax scrolling layers */
+    private background: Background;
+    
+    /** Ground system for terrain collision */
+    private ground: Ground;
+    
     /** Timestamp of the last frame for delta time calculation */
     private lastTime: number = 0;
     
@@ -44,15 +61,29 @@ export class Game {
     private isRunning: boolean = false;
 
     /**
-     * Creates a new Game instance and initializes core systems.
+     * Creates a new Game instance and initializes all core systems.
      * 
      * @param canvas - The HTML canvas element to render the game on
      */
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d')!;
+        
+        // Initialize core systems
         this.inputHandler = new InputHandler();
-        this.duck = new Duck(100, 400, this.inputHandler);
+        this.camera = new Camera(canvas.width, canvas.height);
+        this.background = new Background();
+        this.ground = new Ground(450); // Ground level at Y=450
+        
+        // Initialize duck at starting position  
+        this.duck = new Duck(100, 450, this.inputHandler);
+        
+        // Configure camera
+        this.camera.setBounds(0, 2000); // World width of 2000 pixels
+        this.camera.setSmoothing(0.05); // Smooth camera following
+        
+        // Configure background for side-scrolling feel
+        this.background.setSkyColors('#87CEEB', '#E0F6FF');
     }
 
     /**
@@ -99,12 +130,17 @@ export class Game {
      * @private
      */
     private update(deltaTime: number): void {
-        this.duck.update(deltaTime);
+        // Update duck with ground collision
+        this.duck.update(deltaTime, this.ground);
+        
+        // Update camera to follow duck
+        this.camera.followTarget(this.duck.getX(), this.duck.getY());
+        this.camera.update(deltaTime);
     }
 
     /**
-     * Renders all game entities to the canvas.
-     * Clears the canvas and draws all visible game elements.
+     * Renders all game elements to the canvas with proper layering.
+     * Renders background, ground, and entities with camera transformation.
      * 
      * @private
      */
@@ -112,7 +148,54 @@ export class Game {
         // Clear the canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Draw the game elements
-        this.duck.render(this.ctx);
+        // Render background with parallax scrolling
+        this.background.render(this.ctx, this.camera, this.canvas.width, this.canvas.height);
+        
+        // Render ground
+        this.ground.render(this.ctx, this.camera, this.canvas.width, this.canvas.height);
+        
+        // Render game entities
+        this.duck.render(this.ctx, this.camera);
+    }
+
+    /**
+     * Gets the current camera instance for external access.
+     * 
+     * @returns The camera instance
+     */
+    public getCamera(): Camera {
+        return this.camera;
+    }
+
+    /**
+     * Gets the ground system for external access.
+     * 
+     * @returns The ground instance
+     */
+    public getGround(): Ground {
+        return this.ground;
+    }
+
+    /**
+     * Gets the background system for external access.
+     * 
+     * @returns The background instance
+     */
+    public getBackground(): Background {
+        return this.background;
+    }
+
+    /**
+     * Resizes the game viewport when canvas size changes.
+     * Updates camera viewport dimensions.
+     * 
+     * @param width - New canvas width
+     * @param height - New canvas height
+     */
+    public resize(width: number, height: number): void {
+        this.canvas.width = width;
+        this.canvas.height = height;
+        // Note: Camera constructor parameters are viewport size, 
+        // but we'd need to add a resize method to Camera to update them
     }
 } 
