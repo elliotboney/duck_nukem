@@ -1,3 +1,6 @@
+import cloudsSprite from '../../assets/images/clouds.png';
+import treesSprite from '../../assets/images/trees.png';
+
 /**
  * Background system for managing multiple parallax scrolling layers.
  * Creates depth and visual appeal through layers that scroll at different speeds.
@@ -5,15 +8,17 @@
  * Features:
  * - Multiple background layers with different scroll speeds
  * - Parallax effect for depth perception
- * - Seamless horizontal tiling/repeating
- * - Sky gradient and cloud layers
+ * - Seamless horizontal tiling/repeating with configurable spacing
+ * - Sky gradient, clouds, and trees using actual sprites
+ * - Trees positioned on ground level as foreground parallax layer
+ * - Horizontal offsets to break up repetitive tiling patterns
  * - Configurable layer properties
  * 
  * @example
  * ```typescript
  * const background = new Background();
  * background.addLayer(skyTexture, 0.1, 'sky');
- * background.addLayer(hillsTexture, 0.5, 'hills');
+ * background.addLayer(hillsTexture, 0.5, 'hills', '#FFFFFF', 1.0, 100); // 100px offset
  * 
  * // In render loop
  * background.render(ctx, camera, canvasWidth, canvasHeight);
@@ -26,12 +31,48 @@ export class Background {
     /** Sky gradient colors */
     private skyColorTop: string = '#87CEEB'; // Sky blue
     private skyColorBottom: string = '#E0F6FF'; // Light blue
+    
+    /** Clouds sprite image */
+    private cloudsSprite: HTMLImageElement = new window.Image();
+    
+    /** Whether the clouds sprite has loaded */
+    private cloudsLoaded: boolean = false;
+    
+    /** Trees sprite image */
+    private treesSprite: HTMLImageElement = new window.Image();
+    
+    /** Whether the trees sprite has loaded */
+    private treesLoaded: boolean = false;
 
     /**
      * Creates a new Background instance and initializes default layers.
      */
     constructor() {
+        this.loadSprites();
         this.initializeDefaultLayers();
+    }
+
+    /**
+     * Loads sprite images for background elements.
+     * 
+     * @private
+     */
+    private loadSprites(): void {
+        // Load clouds sprite
+        this.cloudsSprite = new window.Image();
+        this.cloudsSprite.src = cloudsSprite;
+        this.cloudsSprite.onload = () => {
+            console.log('Clouds sprite loaded:', this.cloudsSprite.width, this.cloudsSprite.height);
+            this.cloudsLoaded = true;
+        };
+        
+        // Load trees sprite
+        this.treesSprite = new window.Image();
+        this.treesSprite.src = treesSprite;
+        this.treesSprite.onload = () => {
+            console.log('Trees sprite loaded:', this.treesSprite.width, this.treesSprite.height);
+            this.treesLoaded = true;
+        };
     }
 
     /**
@@ -43,15 +84,17 @@ export class Background {
         // Add sky gradient layer (no scrolling)
         this.addLayer(null, 0, 'sky', '#87CEEB');
         
-        // Add cloud layers with different speeds
-        this.addLayer(null, 0.1, 'clouds-far', '#FFFFFF', 0.7);
-        this.addLayer(null, 0.3, 'clouds-near', '#FFFFFF', 0.5);
+        // Add clouds layer with slow parallax speed and offset for natural spacing
+        this.addLayer(this.cloudsSprite, 0.2, 'clouds', '#FFFFFF', 1.0, 150);
         
         // Add distant hills
-        this.addLayer(null, 0.6, 'hills-distant', '#4A5D23');
+        this.addLayer(null, 0.3, 'hills-distant', '#4A5D23');
         
         // Add near hills/trees
-        this.addLayer(null, 0.8, 'hills-near', '#2F4F2F');
+        this.addLayer(null, 0.3, 'hills-near', '#2F4F2F');
+        
+        // Add trees layer with offset to break up repetition
+        this.addLayer(this.treesSprite, 0.4, 'trees', '#228B22', 1.0, 50);
     }
 
     /**
@@ -62,13 +105,15 @@ export class Background {
      * @param type - Type identifier for the layer
      * @param color - Color for procedural layers
      * @param alpha - Transparency (0-1)
+     * @param horizontalOffset - Horizontal offset for tile spacing (default: 0)
      */
     public addLayer(
         texture: HTMLImageElement | null, 
         scrollSpeed: number, 
         type: string, 
         color: string = '#FFFFFF',
-        alpha: number = 1
+        alpha: number = 1,
+        horizontalOffset: number = 0
     ): void {
         this.layers.push({
             texture,
@@ -76,7 +121,8 @@ export class Background {
             type,
             color,
             alpha,
-            offset: 0
+            offset: 0,
+            horizontalOffset
         });
         
         // Sort layers by scroll speed (back to front)
@@ -126,12 +172,10 @@ export class Background {
                 this.renderSkyGradient(ctx, canvasWidth, canvasHeight);
                 break;
                 
-            case 'clouds-far':
-                this.renderClouds(ctx, parallaxOffset, canvasWidth, canvasHeight, 60, 30, 8);
-                break;
-                
-            case 'clouds-near':
-                this.renderClouds(ctx, parallaxOffset, canvasWidth, canvasHeight, 40, 20, 5);
+            case 'clouds':
+                if (this.cloudsLoaded && layer.texture) {
+                    this.renderCloudsSprite(ctx, layer.texture, parallaxOffset, canvasWidth, canvasHeight, layer.horizontalOffset);
+                }
                 break;
                 
             case 'hills-distant':
@@ -140,6 +184,12 @@ export class Background {
                 
             case 'hills-near':
                 this.renderHills(ctx, parallaxOffset, canvasWidth, canvasHeight, layer.color, 0.5, 150);
+                break;
+                
+            case 'trees':
+                if (this.treesLoaded && layer.texture) {
+                    this.renderTreesSprite(ctx, layer.texture, parallaxOffset, canvasWidth, canvasHeight, camera, layer.horizontalOffset);
+                }
                 break;
                 
             default:
@@ -170,40 +220,50 @@ export class Background {
     }
 
     /**
-     * Renders procedural clouds.
+     * Renders the clouds sprite with tiling and parallax scrolling.
      * 
      * @param ctx - Canvas rendering context
+     * @param cloudsTexture - Clouds sprite image
      * @param offset - Parallax offset
      * @param width - Canvas width
      * @param height - Canvas height
-     * @param cloudWidth - Width of each cloud
-     * @param cloudHeight - Height of each cloud
-     * @param spacing - Spacing between clouds
+     * @param horizontalOffset - Horizontal offset for tile spacing
      * @private
      */
-    private renderClouds(
+    private renderCloudsSprite(
         ctx: CanvasRenderingContext2D, 
+        cloudsTexture: HTMLImageElement,
         offset: number, 
         width: number, 
         height: number,
-        cloudWidth: number,
-        cloudHeight: number,
-        spacing: number
+        horizontalOffset: number = 0
     ): void {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        const textureWidth = cloudsTexture.width;
+        const textureHeight = cloudsTexture.height;
         
-        const totalCloudWidth = cloudWidth + spacing;
-        const startX = -((offset % totalCloudWidth + totalCloudWidth) % totalCloudWidth);
+        // Scale clouds 2x larger
+        const scale = 2.0;
+        const scaledWidth = textureWidth * scale;
+        const scaledHeight = textureHeight * scale;
         
-        for (let x = startX; x < width + cloudWidth; x += totalCloudWidth) {
-            // Simple cloud shape using circles
-            const cloudY = height * 0.1 + Math.sin((x + offset) * 0.01) * 20;
-            
-            ctx.beginPath();
-            ctx.arc(x, cloudY, cloudHeight / 2, 0, Math.PI * 2);
-            ctx.arc(x + cloudWidth / 3, cloudY, cloudHeight / 3, 0, Math.PI * 2);
-            ctx.arc(x + cloudWidth * 2/3, cloudY, cloudHeight / 2.5, 0, Math.PI * 2);
-            ctx.fill();
+        // Calculate seamless horizontal tiling offset using scaled width
+        const wrappedOffset = offset % scaledWidth;
+        // Apply horizontal offset after modulo to preserve the full offset value
+        const startX = -wrappedOffset - scaledWidth + horizontalOffset;
+        
+        // Position clouds in the upper portion of the screen, using scaled dimensions
+        const cloudsY = height * 0.05; // 5% from top
+        
+        // Tile clouds across the entire screen width with spacing between tiles
+        const tileSpacing = scaledWidth + horizontalOffset; // Add spacing between tiles
+        for (let x = startX; x <= width + tileSpacing; x += tileSpacing) {
+            ctx.drawImage(
+                cloudsTexture,
+                x,
+                cloudsY,
+                scaledWidth,
+                scaledHeight  // Use scaled dimensions
+            );
         }
     }
 
@@ -250,6 +310,62 @@ export class Background {
         ctx.lineTo(-offset, height);
         ctx.closePath();
         ctx.fill();
+    }
+
+    /**
+     * Renders the trees sprite positioned on top of the ground with parallax scrolling.
+     * 
+     * @param ctx - Canvas rendering context
+     * @param treesTexture - Trees sprite image
+     * @param offset - Parallax offset
+     * @param width - Canvas width
+     * @param height - Canvas height
+     * @param camera - Camera for ground level calculation
+     * @param horizontalOffset - Horizontal offset for tile spacing
+     * @private
+     */
+    private renderTreesSprite(
+        ctx: CanvasRenderingContext2D, 
+        treesTexture: HTMLImageElement,
+        offset: number, 
+        width: number, 
+        height: number,
+        camera: any,
+        horizontalOffset: number = 0
+    ): void {
+        const textureWidth = treesTexture.width;
+        const textureHeight = treesTexture.height;
+        
+        // Scale trees 1.5x larger
+        const scale = 1.5;
+        const scaledWidth = textureWidth * scale;
+        const scaledHeight = textureHeight * scale;
+        
+        // Calculate seamless horizontal tiling offset using scaled width
+        const wrappedOffset = offset % scaledWidth;
+        // Apply horizontal offset after modulo to preserve the full offset value
+        const startX = -wrappedOffset - scaledWidth + horizontalOffset;
+        
+        // Position trees on the ground level (world Y 820, adjusted to screen coordinates)
+        // Ground is at world Y 820, trees should sit on dirt surface accounting for grass layer
+        const groundWorldY = 820; // Ground level in world coordinates
+        const groundScreenY = camera.worldToScreenY(groundWorldY);
+        const treesY = groundScreenY - scaledHeight + 15; // Trees sit on dirt surface, accounting for 15px grass layer
+        
+        // Only render if trees are visible on screen
+        if (treesY < height && treesY + scaledHeight > 0) {
+            // Tile trees across the entire screen width with spacing between tiles
+            const tileSpacing = scaledWidth + horizontalOffset; // Add spacing between tiles
+            for (let x = startX; x <= width + tileSpacing; x += tileSpacing) {
+                ctx.drawImage(
+                    treesTexture,
+                    x,
+                    treesY,
+                    scaledWidth,
+                    scaledHeight
+                );
+            }
+        }
     }
 
     /**
@@ -312,4 +428,7 @@ interface BackgroundLayer {
     
     /** Current offset for animation */
     offset: number;
+    
+    /** Horizontal offset for tile spacing */
+    horizontalOffset: number;
 } 

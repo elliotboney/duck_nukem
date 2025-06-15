@@ -3,3 +3,62 @@ description:
 globs:
 alwaysApply: false
 ---
+# Coding Standards
+
+## TypeScript Guidelines
+- Use explicit types for all variables and parameters
+- Avoid `any` type when possible
+- Use interfaces for complex data structures
+- Keep functions focused and small
+
+## Game Development Best Practices
+1. Entity Design
+   - Separate position and velocity
+   - Use deltaTime for smooth movement
+   - Implement proper collision detection
+
+2. Performance
+   - Minimize object creation in game loop
+   - Use object pooling for frequently created objects
+   - Optimize rendering calls
+
+3. Code Organization
+   - Keep related functionality together
+   - Use meaningful class and method names
+   - Add JSDoc comments for public methods
+
+4. Testing
+   - Write tests for core game mechanics
+   - Test edge cases in physics
+   - Verify input handling
+
+5. Debug Features (MANDATORY)
+   - ALL sprite entities MUST include debug bounding box rendering
+   - Use DebugConfig.showBoundingBoxes to control visibility
+   - Import DebugConfig from '../core/DebugConfig'
+   - Render debug boxes with red color and 2px line width
+   - Position bounding box to match sprite frame dimensions
+   
+   Example implementation:
+   ```typescript
+   import { DebugConfig } from '../core/DebugConfig';
+   
+   // In render method:
+   if (DebugConfig.showBoundingBoxes) {
+       ctx.save();
+       ctx.strokeStyle = 'red';
+       ctx.lineWidth = 2;
+       ctx.strokeRect(x, y, width, height);
+       ctx.restore();
+   }
+   ```
+
+## File Structure
+- Keep related files in appropriate directories
+- Use consistent file naming
+- Follow the established project structure
+
+## Documentation
+- Update [todo.md](mdc:todo.md) as tasks are completed
+- Document new features in code
+- Keep [README.md](mdc:README.md) up to date

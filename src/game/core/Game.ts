@@ -3,6 +3,7 @@ import { InputHandler } from '../core/InputHandler';
 import { Camera } from '../core/Camera';
 import { Background } from '../world/Background';
 import { Ground } from '../world/Ground';
+import { DebugConfig } from '../core/DebugConfig';
 
 /**
  * Main Game class that orchestrates the game loop and manages core game systems.
@@ -73,10 +74,10 @@ export class Game {
         this.inputHandler = new InputHandler();
         this.camera = new Camera(canvas.width, canvas.height);
         this.background = new Background();
-        this.ground = new Ground(450); // Ground level at Y=450
+        this.ground = new Ground(820); // Ground level at Y=850 (near bottom of screen)
         
         // Initialize duck at starting position  
-        this.duck = new Duck(100, 450, this.inputHandler);
+        this.duck = new Duck(100, 865, this.inputHandler);
         
         // Configure camera
         this.camera.setBounds(0, 2000); // World width of 2000 pixels
@@ -84,6 +85,9 @@ export class Game {
         
         // Configure background for side-scrolling feel
         this.background.setSkyColors('#87CEEB', '#E0F6FF');
+        
+        // Initialize debug system with keyboard shortcuts
+        DebugConfig.setupKeyboardShortcuts();
     }
 
     /**

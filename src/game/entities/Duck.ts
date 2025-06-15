@@ -1,5 +1,6 @@
 import { InputHandler } from '../core/InputHandler';
 import { Animation } from '../utils/Animation';
+import { DebugConfig } from '../core/DebugConfig';
 import duckWalkingSprite from '../../assets/images/duck_walking.png';
 import duckRunningSprite from '../../assets/images/duck_running.png';
 import duckJumpingSprite from '../../assets/images/duck_jumping.png';
@@ -273,8 +274,8 @@ export class Duck {
         } else {
             // Fallback ground collision for backward compatibility
             const duckBottom = this.y + this.frameHeight / 2;
-            if (duckBottom >= 450) {
-                this.y = 450 - this.frameHeight / 2;
+            if (duckBottom >= 850) {
+                this.y = 850 - this.frameHeight / 2;
                 this.velocityY = 0;
                 this.isJumping = false;
             }
@@ -333,16 +334,19 @@ export class Duck {
                 screenY = camera.worldToScreenY(this.y);
             }
 
-            // Draw debug frame
-            ctx.save();
-            ctx.strokeStyle = 'red';
-            ctx.strokeRect(
-                screenX - this.frameWidth / 2,
-                screenY - this.frameHeight / 2,
-                this.frameWidth,
-                this.frameHeight
-            );
-            ctx.restore();
+            // Draw debug bounding box if enabled
+            if (DebugConfig.showBoundingBoxes) {
+                ctx.save();
+                ctx.strokeStyle = 'red';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(
+                    screenX - this.frameWidth / 2,
+                    screenY - this.frameHeight / 2,
+                    this.frameWidth,
+                    this.frameHeight
+                );
+                ctx.restore();
+            }
 
             let sx = 0;
             let sy = 0;
