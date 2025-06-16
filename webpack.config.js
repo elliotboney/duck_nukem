@@ -1,10 +1,12 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 module.exports = {
-  mode: 'development',
+  mode: isProduction ? 'production' : 'development',
   entry: './src/index.ts',
-  devtool: 'inline-source-map',
+  devtool: isProduction ? 'source-map' : 'inline-source-map',
   module: {
     rules: [
       {
@@ -26,14 +28,25 @@ module.exports = {
     extensions: ['.tsx', '.ts', '.js'],
   },
   output: {
-    filename: 'bundle.js',
+    filename: isProduction ? '[name].[contenthash].js' : 'bundle.js',
     path: path.resolve(__dirname, 'dist'),
     clean: true,
+    publicPath: '/',
+  },
+  optimization: {
+    splitChunks: isProduction ? {
+      chunks: 'all',
+    } : false,
   },
   plugins: [
     new HtmlWebpackPlugin({
       title: 'Parker Duck - Side Scrolling Shooter',
       template: './src/index.html',
+      minify: isProduction ? {
+        removeComments: true,
+        collapseWhitespace: true,
+        removeRedundantAttributes: true,
+      } : false,
     }),
   ],
   devServer: {

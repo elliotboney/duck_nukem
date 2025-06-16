@@ -6,6 +6,8 @@
   "scripts": {
     "start": "webpack serve --open",
     "build": "webpack --mode production",
+    "deploy": "npm run build && npx wrangler pages deploy dist --project-name=duck-nukem --commit-dirty=true",
+    "deploy:preview": "npm run build && npx wrangler pages deploy dist --project-name=duck-nukem --branch=preview --commit-dirty=true",
     "test": "jest",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",

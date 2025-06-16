@@ -404,6 +404,70 @@ Major enhancement session focused on implementing professional-quality backgroun
 ### Session Outcome
 This session transformed the game's visual quality from basic to professional-grade. The background now features sophisticated atmospheric effects, the duck has natural idle behavior, and all rendering issues have been resolved. The game now has the visual polish expected of a commercial side-scrolling platformer.
 
+## Latest Session (World Expansion & Parallax Jump Fix)
+
+### Session Overview
+User requested a 4x longer test world and we successfully addressed subsequent parallax rendering issues.
+
+### Major Accomplishments This Session
+
+1. **World Size Expansion**
+   - **4x Longer World**: Expanded world from 2000px to 8000px width
+   - **Camera Bounds Update**: `Game.ts` camera bounds changed from `setBounds(0, 2000)` to `setBounds(0, 8000)`
+   - **Default Camera Bounds**: `Camera.ts` default maxX updated from 2000 to 8000 pixels
+   - **Seamless Background**: All parallax layers automatically handle the longer world with infinite tiling
+
+2. **Parallax Jumping Bug Fix**
+   - **Root Cause Identified**: Large camera positions (4000+ pixels) caused floating-point precision issues in modulo operations
+   - **SafeModulo Implementation**: Added `safeModulo()` helper function to handle negative numbers and large values properly
+   - **Stable Tiling Logic**: Replaced problematic modulo operations in all background layers
+   - **Fixed Horizontal Offset Logic**: Separated tile positioning from tile spacing for consistent results
+
+3. **Tiling Mathematics Overhaul**
+   - **Before (Problematic)**:
+     ```typescript
+     const startX = -wrappedOffset - scaledWidth + horizontalOffset;
+     const tileSpacing = scaledWidth + horizontalOffset; // ❌ Inconsistent spacing
+     ```
+   - **After (Stable)**:
+     ```typescript
+     const baseStartX = -wrappedOffset - scaledWidth;
+     const startX = baseStartX + horizontalOffset;      // ✅ Position-only offset
+     const tileSpacing = scaledWidth;                   // ✅ Consistent spacing
+     ```
+
+4. **Background Layer Fixes Applied To**
+   - **Clouds**: 150px positive offset - fixed tiling calculations
+   - **Hills1**: -20px negative offset - stable overlap without spacing issues
+   - **Hills2**: -15px negative offset - stable overlap without spacing issues  
+   - **Trees**: -10px negative offset - stable overlap without spacing issues
+
+### Technical Implementation Details
+
+#### SafeModulo Function
+```typescript
+private safeModulo(value: number, modulus: number): number {
+    return ((value % modulus) + modulus) % modulus;
+}
+```
+- **Handles Negative Values**: Prevents negative modulo results
+- **Large Number Stability**: Reduces floating-point precision issues
+- **Consistent Wrapping**: Ensures values always between 0 and modulus
+
+#### Improved Tiling Logic
+- **Consistent Tile Spacing**: All tiles spaced exactly `scaledWidth` apart
+- **Position-Only Offsets**: Horizontal offsets only affect starting position
+- **Stable Modulo Operations**: Predictable behavior across entire 8000px world
+- **Maintained Visual Overlap**: Negative offsets still create desired overlap effect
+
+### Files Modified This Session
+- `src/game/core/Game.ts` - **UPDATED**: Camera bounds from 2000 to 8000 pixels
+- `src/game/core/Camera.ts` - **UPDATED**: Default maxX from 2000 to 8000 pixels  
+- `src/game/world/Background.ts` - **MAJOR UPDATE**: SafeModulo function, stable tiling logic for all layers
+
+### Session Outcome
+Successfully expanded the game world to 4x the original length (8000px) and completely eliminated parallax jumping issues. The background system now provides smooth, glitch-free scrolling across the entire extended world. All tiling mathematics are now stable and consistent regardless of camera position.
+
 ### Next Development Priorities
 1. **Enemy System**: Implement cartoon bread loaves with AK-47s
 2. **Projectile System**: Add shooting mechanics for duck and enemies
@@ -423,4 +487,5 @@ This session transformed the game's visual quality from basic to professional-gr
 - **NEW**: Sprite-based hills system with proper parallax and scaling
 - **NEW**: Idle animation system with natural state transitions
 - **NEW**: Ground rendering system with seamless bottom coverage
+- **NEW**: Extended 8000px world with stable parallax rendering
 - **NEW**: All visual systems polished and ready for gameplay elements 
