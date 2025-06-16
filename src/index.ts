@@ -3,7 +3,7 @@
  * Initializes the game canvas and starts the game loop when the page loads.
  * 
  * Game Configuration:
- * - Canvas size: 800x600 pixels
+ * - Canvas size: 1200x600 pixels (1.5x wider for better gameplay view)
  * - Target framerate: 60fps
  * - Rendering: HTML5 Canvas 2D context
  * 
@@ -20,7 +20,7 @@ import { Game } from './game/core/Game';
  */
 window.addEventListener('load', () => {
     const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
-    canvas.width = 800;
+    canvas.width = 1200; // 1.5x wider (800 * 1.5 = 1200)
     canvas.height = 600;
     
     const game = new Game(canvas);

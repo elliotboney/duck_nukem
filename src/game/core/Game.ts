@@ -1,4 +1,5 @@
 import { Duck } from '../entities/Duck';
+import { AngryBread } from '../entities/AngryBread';
 import { InputHandler } from '../core/InputHandler';
 import { Camera } from '../core/Camera';
 import { Background } from '../world/Background';
@@ -24,7 +25,7 @@ import { DebugConfig } from '../core/DebugConfig';
  * - Background system with multiple parallax layers
  * - Ground system for terrain collision
  * - Centralized input handling through InputHandler
- * - Entity management (currently Duck)
+ * - Entity management (Duck and AngryBread enemies)
  * 
  * @example
  * ```typescript
@@ -45,6 +46,9 @@ export class Game {
     
     /** The main player character */
     private duck: Duck;
+    
+    /** Array of angry bread enemies */
+    private enemies: AngryBread[] = [];
     
     /** Camera system for world-to-screen coordinate transformation */
     private camera: Camera;
@@ -79,6 +83,9 @@ export class Game {
         // Initialize duck at starting position  
         this.duck = new Duck(100, 865, this.inputHandler);
         
+        // Initialize test enemies
+        this.initializeEnemies();
+        
         // Configure camera
         this.camera.setBounds(0, 8000); // World width of 8000 pixels (4x longer)
         this.camera.setSmoothing(0.05); // Smooth camera following
@@ -88,6 +95,36 @@ export class Game {
         
         // Initialize debug system with keyboard shortcuts
         DebugConfig.setupKeyboardShortcuts();
+    }
+
+    /**
+     * Initializes enemy positions throughout the world.
+     * Creates test enemies at various positions for gameplay testing.
+     * 
+     * @private
+     */
+    private initializeEnemies(): void {
+        // Create test enemies at various positions across the world
+        // Spread them out across the 8000px world width
+        
+        // First group - early encounter
+        this.enemies.push(new AngryBread(800, 800, 150));   // x: 800, y: 800, patrol: 150px
+        this.enemies.push(new AngryBread(1200, 800, 100));  // x: 1200, y: 800, patrol: 100px
+        
+        // Second group - mid section
+        this.enemies.push(new AngryBread(2500, 800, 200));  // x: 2500, y: 800, patrol: 200px
+        this.enemies.push(new AngryBread(3000, 800, 120));  // x: 3000, y: 800, patrol: 120px
+        this.enemies.push(new AngryBread(3500, 800, 180));  // x: 3500, y: 800, patrol: 180px
+        
+        // Third group - later section
+        this.enemies.push(new AngryBread(5000, 800, 160));  // x: 5000, y: 800, patrol: 160px
+        this.enemies.push(new AngryBread(5800, 800, 140));  // x: 5800, y: 800, patrol: 140px
+        
+        // Final group - end area
+        this.enemies.push(new AngryBread(7200, 800, 200));  // x: 7200, y: 800, patrol: 200px
+        this.enemies.push(new AngryBread(7800, 800, 100));  // x: 7800, y: 800, patrol: 100px
+        
+        console.log(`Initialized ${this.enemies.length} angry bread enemies`);
     }
 
     /**
@@ -137,6 +174,11 @@ export class Game {
         // Update duck with ground collision
         this.duck.update(deltaTime, this.ground);
         
+        // Update all enemies
+        for (const enemy of this.enemies) {
+            enemy.update(deltaTime, this.ground);
+        }
+        
         // Update camera to follow duck
         this.camera.followTarget(this.duck.getX(), this.duck.getY());
         this.camera.update(deltaTime);
@@ -158,7 +200,12 @@ export class Game {
         // Render ground
         this.ground.render(this.ctx, this.camera, this.canvas.width, this.canvas.height);
         
-        // Render game entities
+        // Render all enemies
+        for (const enemy of this.enemies) {
+            enemy.render(this.ctx, this.camera);
+        }
+        
+        // Render duck (on top of enemies)
         this.duck.render(this.ctx, this.camera);
     }
 
@@ -187,6 +234,15 @@ export class Game {
      */
     public getBackground(): Background {
         return this.background;
+    }
+
+    /**
+     * Gets the array of enemies for external access.
+     * 
+     * @returns Array of AngryBread enemies
+     */
+    public getEnemies(): AngryBread[] {
+        return this.enemies;
     }
 
     /**
