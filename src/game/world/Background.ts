@@ -1,5 +1,7 @@
 import cloudsSprite from '../../assets/images/clouds.png';
 import treesSprite from '../../assets/images/trees.png';
+import hills1Sprite from '../../assets/images/hills1.png';
+import hills2Sprite from '../../assets/images/hills2.png';
 
 /**
  * Background system for managing multiple parallax scrolling layers.
@@ -9,16 +11,18 @@ import treesSprite from '../../assets/images/trees.png';
  * - Multiple background layers with different scroll speeds
  * - Parallax effect for depth perception
  * - Seamless horizontal tiling/repeating with configurable spacing
- * - Sky gradient, clouds, and trees using actual sprites
+ * - Sky gradient, clouds, hills, and trees using actual sprites
+ * - Multi-layer hills with different scales and parallax speeds
  * - Trees positioned on ground level as foreground parallax layer
  * - Horizontal offsets to break up repetitive tiling patterns
- * - Configurable layer properties
+ * - Configurable layer properties and scaling
+ * - Darkening filters for atmospheric depth (distant layers appear darker)
  * 
  * @example
  * ```typescript
  * const background = new Background();
  * background.addLayer(skyTexture, 0.1, 'sky');
- * background.addLayer(hillsTexture, 0.5, 'hills', '#FFFFFF', 1.0, 100); // 100px offset
+ * background.addLayer(hillsTexture, 0.5, 'hills', '#FFFFFF', 1.0, 100, 0.15); // 100px offset, 15% darker
  * 
  * // In render loop
  * background.render(ctx, camera, canvasWidth, canvasHeight);
@@ -43,6 +47,18 @@ export class Background {
     
     /** Whether the trees sprite has loaded */
     private treesLoaded: boolean = false;
+    
+    /** Hills1 sprite image (distant hills) */
+    private hills1Sprite: HTMLImageElement = new window.Image();
+    
+    /** Whether the hills1 sprite has loaded */
+    private hills1Loaded: boolean = false;
+    
+    /** Hills2 sprite image (near hills) */
+    private hills2Sprite: HTMLImageElement = new window.Image();
+    
+    /** Whether the hills2 sprite has loaded */
+    private hills2Loaded: boolean = false;
 
     /**
      * Creates a new Background instance and initializes default layers.
@@ -73,6 +89,22 @@ export class Background {
             console.log('Trees sprite loaded:', this.treesSprite.width, this.treesSprite.height);
             this.treesLoaded = true;
         };
+        
+        // Load hills1 sprite (distant hills)
+        this.hills1Sprite = new window.Image();
+        this.hills1Sprite.src = hills1Sprite;
+        this.hills1Sprite.onload = () => {
+            console.log('Hills1 sprite loaded:', this.hills1Sprite.width, this.hills1Sprite.height);
+            this.hills1Loaded = true;
+        };
+        
+        // Load hills2 sprite (near hills)
+        this.hills2Sprite = new window.Image();
+        this.hills2Sprite.src = hills2Sprite;
+        this.hills2Sprite.onload = () => {
+            console.log('Hills2 sprite loaded:', this.hills2Sprite.width, this.hills2Sprite.height);
+            this.hills2Loaded = true;
+        };
     }
 
     /**
@@ -82,19 +114,19 @@ export class Background {
      */
     private initializeDefaultLayers(): void {
         // Add sky gradient layer (no scrolling)
-        this.addLayer(null, 0, 'sky', '#87CEEB');
+        this.addLayer(null, 0, 'sky', '#87CEEB', 1.0, 0);
         
         // Add clouds layer with slow parallax speed and offset for natural spacing
-        this.addLayer(this.cloudsSprite, 0.2, 'clouds', '#FFFFFF', 1.0, 150);
+        this.addLayer(this.cloudsSprite, 0.1, 'clouds', '#FFFFFF', 1.0, 150);
         
-        // Add distant hills
-        this.addLayer(null, 0.3, 'hills-distant', '#4A5D23');
+        // Add distant hills (hills1) with slower parallax and smaller scale (overlap to hide seams)
+        this.addLayer(this.hills1Sprite, 0.15, 'hills1', '#FFFFFF', 1.0, -20);
         
-        // Add near hills/trees
-        this.addLayer(null, 0.3, 'hills-near', '#2F4F2F');
+        // Add near hills (hills2) with faster parallax and larger scale (overlap to hide seams)
+        this.addLayer(this.hills2Sprite, 0.25, 'hills2', '#FFFFFF', 1.0, -15);
         
-        // Add trees layer with offset to break up repetition
-        this.addLayer(this.treesSprite, 0.4, 'trees', '#228B22', 1.0, 50);
+        // Add trees layer with overlap to hide seams
+        this.addLayer(this.treesSprite, 0.4, 'trees', '#228B22', 1.0, -10);
     }
 
     /**
@@ -178,12 +210,16 @@ export class Background {
                 }
                 break;
                 
-            case 'hills-distant':
-                this.renderHills(ctx, parallaxOffset, canvasWidth, canvasHeight, layer.color, 0.3, 200);
+            case 'hills1':
+                if (this.hills1Loaded && layer.texture) {
+                    this.renderHillsSprite(ctx, layer.texture, parallaxOffset, canvasWidth, canvasHeight, camera, layer.horizontalOffset, 2);
+                }
                 break;
                 
-            case 'hills-near':
-                this.renderHills(ctx, parallaxOffset, canvasWidth, canvasHeight, layer.color, 0.5, 150);
+            case 'hills2':
+                if (this.hills2Loaded && layer.texture) {
+                    this.renderHillsSprite(ctx, layer.texture, parallaxOffset, canvasWidth, canvasHeight, camera, layer.horizontalOffset, 1.5);
+                }
                 break;
                 
             case 'trees':
@@ -201,6 +237,8 @@ export class Background {
 
         ctx.restore();
     }
+
+
 
     /**
      * Renders a sky gradient background.
@@ -254,15 +292,16 @@ export class Background {
         // Position clouds in the upper portion of the screen, using scaled dimensions
         const cloudsY = height * 0.05; // 5% from top
         
-        // Tile clouds across the entire screen width with spacing between tiles
-        const tileSpacing = scaledWidth + horizontalOffset; // Add spacing between tiles
-        for (let x = startX; x <= width + tileSpacing; x += tileSpacing) {
+        // Tile clouds across the entire screen width with overlap to prevent seams
+        const tileSpacing = scaledWidth + horizontalOffset; // Negative horizontalOffset creates overlap
+        for (let x = startX; x <= width + Math.abs(tileSpacing); x += tileSpacing) {
+            // Draw the clouds sprite
             ctx.drawImage(
                 cloudsTexture,
                 x,
                 cloudsY,
                 scaledWidth,
-                scaledHeight  // Use scaled dimensions
+                scaledHeight
             );
         }
     }
@@ -346,21 +385,78 @@ export class Background {
         // Apply horizontal offset after modulo to preserve the full offset value
         const startX = -wrappedOffset - scaledWidth + horizontalOffset;
         
-        // Position trees on the ground level (world Y 820, adjusted to screen coordinates)
-        // Ground is at world Y 820, trees should sit on dirt surface accounting for grass layer
-        const groundWorldY = 820; // Ground level in world coordinates
+        // Position trees on the ground level (world Y 823, adjusted to screen coordinates)
+        // Ground is at world Y 823, trees should sit on dirt surface accounting for grass layer
+        const groundWorldY = 823; // Ground level in world coordinates
         const groundScreenY = camera.worldToScreenY(groundWorldY);
         const treesY = groundScreenY - scaledHeight + 15; // Trees sit on dirt surface, accounting for 15px grass layer
         
         // Only render if trees are visible on screen
         if (treesY < height && treesY + scaledHeight > 0) {
-            // Tile trees across the entire screen width with spacing between tiles
-            const tileSpacing = scaledWidth + horizontalOffset; // Add spacing between tiles
-            for (let x = startX; x <= width + tileSpacing; x += tileSpacing) {
+            // Tile trees across the entire screen width with overlap to prevent seams
+            const tileSpacing = scaledWidth + horizontalOffset; // Negative horizontalOffset creates overlap
+            for (let x = startX; x <= width + Math.abs(tileSpacing); x += tileSpacing) {
+                // Draw the trees sprite
                 ctx.drawImage(
                     treesTexture,
                     x,
                     treesY,
+                    scaledWidth,
+                    scaledHeight
+                );
+            }
+        }
+    }
+
+    /**
+     * Renders hills sprites with scaling and parallax scrolling.
+     * 
+     * @param ctx - Canvas rendering context
+     * @param hillsTexture - Hills sprite image
+     * @param offset - Parallax offset
+     * @param width - Canvas width
+     * @param height - Canvas height
+     * @param camera - Camera for ground level calculation
+     * @param horizontalOffset - Horizontal offset for tile spacing
+     * @param scale - Scale factor for the hills
+     * @private
+     */
+    private renderHillsSprite(
+        ctx: CanvasRenderingContext2D, 
+        hillsTexture: HTMLImageElement,
+        offset: number, 
+        width: number, 
+        height: number,
+        camera: any,
+        horizontalOffset: number = 0,
+        scale: number = 1.0
+    ): void {
+        const textureWidth = hillsTexture.width;
+        const textureHeight = hillsTexture.height;
+        
+        // Apply scaling
+        const scaledWidth = textureWidth * scale;
+        const scaledHeight = textureHeight * scale;
+        
+        // Calculate seamless horizontal tiling offset using scaled width
+        const wrappedOffset = offset % scaledWidth;
+        const startX = -wrappedOffset - scaledWidth + horizontalOffset;
+        
+        // Position hills to align with the bottom of the screen (resting on ground level)
+        const groundWorldY = 836; // Ground level in world coordinates
+        const groundScreenY = camera.worldToScreenY(groundWorldY);
+        const hillsY = groundScreenY - scaledHeight; // Hills sit on ground level
+        
+        // Only render if hills are visible on screen
+        if (hillsY < height && hillsY + scaledHeight > 0) {
+            // Tile hills across the entire screen width with overlap to prevent seams
+            const tileSpacing = scaledWidth + horizontalOffset; // Negative horizontalOffset creates overlap
+            for (let x = startX; x <= width + Math.abs(tileSpacing); x += tileSpacing) {
+                // Draw the hills sprite
+                ctx.drawImage(
+                    hillsTexture,
+                    x,
+                    hillsY,
                     scaledWidth,
                     scaledHeight
                 );

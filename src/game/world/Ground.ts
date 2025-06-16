@@ -86,7 +86,7 @@ export class Ground {
         // If using ground sprite, adjust for grass layer so duck stands on brown dirt
         if (this.groundLoaded) {
             // Assuming the ground sprite has ~8-10px of grass on top, position duck on dirt below
-            return this.groundLevel + 15;
+            return this.groundLevel + 17;
         }
         // For fallback rendering, use base ground level
         return this.groundLevel;
@@ -160,16 +160,19 @@ export class Ground {
         const wrappedOffset = cameraOffset % textureWidth;
         const startX = -wrappedOffset - textureWidth;
         
-        // Calculate how much of the ground texture to show
+        // Calculate how much of the ground texture to show - always fill to bottom of screen
         const availableHeight = canvasHeight - groundScreenY;
-        const renderHeight = Math.min(textureHeight, availableHeight);
+        const renderHeight = Math.max(textureHeight, availableHeight);
         
-        // Tile ground sprites across the screen width
-        for (let x = startX; x <= canvasWidth + textureWidth; x += textureWidth) {
+        // Tile ground sprites across the screen width with slight overlap to prevent seams
+        const tileOverlap = 2; // 2 pixel overlap to hide seams
+        const tileSpacing = textureWidth - tileOverlap;
+        
+        for (let x = startX; x <= canvasWidth + textureWidth; x += tileSpacing) {
             ctx.drawImage(
                 this.groundSprite,
-                0, 0, textureWidth, renderHeight, // Source: full width, appropriate height
-                x, groundScreenY, textureWidth, renderHeight // Destination
+                0, 0, textureWidth, textureHeight, // Source: full texture
+                x, groundScreenY, textureWidth, renderHeight // Destination: stretch to fill available height
             );
         }
     }

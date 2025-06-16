@@ -13,12 +13,13 @@ Side-scrolling browser game featuring a white duck with bow tie as protagonist. 
 
 ### Current Game Features
 - Duck character with physics (movement, jumping, gravity, ground collision)
-- Three animation states: Walk, Run, Jump
+- Four animation states: Idle, Walk, Run, Jump
 - Keyboard controls: WASD/arrows for movement, Space for jump, Shift for run
 - Sprite-based animations using dedicated sprite files for each animation type
-- **Scrolling background with parallax effects (sky, clouds, hills)**
+- **Professional parallax background with sprite-based hills and atmospheric effects**
 - **Camera system that smoothly follows the duck**
-- **Proper ground collision and terrain rendering**
+- **Proper ground collision and terrain rendering with seamless bottom coverage**
+- **Master debug configuration system with keyboard shortcuts**
 - Real-time sprite coordinate testing and updating system
 
 ## Recent Session Work
@@ -42,9 +43,9 @@ Side-scrolling browser game featuring a white duck with bow tie as protagonist. 
    - Created fallback to localStorage if server unavailable
 
 4. **Fixed Animation System**
-   - Updated Duck.ts render method to use all three animation types (walk, run, jump)
+   - Updated Duck.ts render method to use all animation types (walk, run, jump, idle)
    - Previously only walk animation was working
-   - Now properly switches between walkFrameData, runFrameData, and jumpFrameData based on current animation state
+   - Now properly switches between walkFrameData, runFrameData, jumpFrameData, and idleFrameData based on current animation state
 
 5. **Added Sprite Mirroring**
    - Implemented horizontal sprite flipping when duck faces left
@@ -77,7 +78,7 @@ Side-scrolling browser game featuring a white duck with bow tie as protagonist. 
 
 9. **Implemented Running Animation System**
    - Added duck_running.png sprite support (1 row, 4 frames)
-   - Integrated three-state animation system: ANIM_WALK, ANIM_RUN, ANIM_JUMP
+   - Integrated four-state animation system: ANIM_IDLE, ANIM_WALK, ANIM_RUN, ANIM_JUMP
    - Running animation triggered by holding Shift key during movement
    - Faster animation speed for running (40ms vs 60ms for walking)
    - Proper animation switching based on movement state and input
@@ -98,8 +99,8 @@ Side-scrolling browser game featuring a white duck with bow tie as protagonist. 
 
 12. **Added Trees Parallax Layer**
     - **Trees Layer**: Integrated trees.png as foreground parallax layer
-    - **Ground-Level Positioning**: Trees positioned on top of ground surface (world Y=820)
-    - **Faster Parallax**: 1.2x scroll speed for foreground depth effect
+    - **Ground-Level Positioning**: Trees positioned on top of ground surface (world Y=823)
+    - **Faster Parallax**: 0.4x scroll speed for foreground depth effect
     - **Infinite Tiling**: Seamless horizontal tiling across screen width
     - **Proper Z-Order**: Trees render after ground but before entities
 
@@ -116,8 +117,35 @@ Side-scrolling browser game featuring a white duck with bow tie as protagonist. 
     - **Extensible System**: Ready for future debug features (performance, coordinates, collision)
     - **Global Control**: All sprites use DebugConfig.showBoundingBoxes for consistent behavior
 
+15. **Implemented Sprite-Based Hills System with Atmospheric Effects**
+    - **Hills1 & Hills2 Sprites**: Replaced procedural hills with hills1.png and hills2.png
+    - **Atmospheric Perspective**: Added configurable darkening filter for distant objects
+    - **Professional Parallax**: Hills1 (0.15x speed, 2x scale, 15% darkening), Hills2 (0.25x speed, 1.5x scale)
+    - **Transparency Preservation**: Fixed darkening system to preserve sprite transparency using globalAlpha
+    - **Horizontal Spacing**: Configurable offsets prevent repetitive tiling patterns
+
+16. **Added Idle Animation System**
+    - **Idle Animation**: Implemented duck_idle.png with 5-frame animation (120ms per frame)
+    - **Animation Priority**: Idle → Walk → Run → Jump state machine
+    - **Default State**: Duck starts in idle animation instead of walking
+    - **Seamless Transitions**: Smooth switching between all four animation states
+
+17. **Fixed Ground Rendering Coverage**
+    - **Bottom Coverage**: Fixed white gap at bottom of screen by ensuring ground always fills to canvas bottom
+    - **Stretch Rendering**: Ground sprite now stretches vertically to cover any gaps
+    - **Seamless Display**: Eliminated visual artifacts at screen edges
+
 ### Current Sprite System (Latest)
 ```typescript
+// Idle Animation (duck_idle.png - 380x90, 5 frames)
+const idleFrameData = [
+    { x: 0, y: 0, width: 76, height: 90 },      // frame 0
+    { x: 76, y: 0, width: 76, height: 90 },     // frame 1
+    { x: 152, y: 0, width: 76, height: 90 },    // frame 2
+    { x: 228, y: 0, width: 76, height: 90 },    // frame 3
+    { x: 304, y: 0, width: 76, height: 90 },    // frame 4
+];
+
 // Walking Animation (duck_walking.png - 532x90, 7 frames)
 const walkFrameData = [
     { x: 0, y: 0, width: 76, height: 90 },      // frame 0
@@ -137,12 +165,21 @@ const runFrameData = [
     { x: 228, y: 0, width: 76, height: 90 },    // frame 3
 ];
 
+// Jumping Animation (duck_jumping.png - 1216x90, 16 frames)
+const jumpFrameData = [
+    { x: 0, y: 0, width: 76, height: 90 },      // frame 0
+    { x: 76, y: 0, width: 76, height: 90 },     // frame 1
+    // ... 16 frames total
+];
+
 // Animation Settings:
+// - Idle Frame Duration: 120ms (~8.3 fps)
 // - Walking Frame Duration: 60ms (~16.7 fps)
 // - Running Frame Duration: 40ms (~25 fps)
+// - Jumping Frame Duration: 50ms (~20 fps)
 // - Frame Size: 76x90 pixels (consistent across all sprites)
 // - Horizontal Flipping: Enabled for left movement
-// - Animation States: ANIM_WALK (0), ANIM_RUN (1), ANIM_JUMP (2)
+// - Animation States: ANIM_IDLE (3), ANIM_WALK (0), ANIM_RUN (1), ANIM_JUMP (2)
 ```
 
 ### World Systems Architecture
@@ -153,17 +190,18 @@ camera.setBounds(0, 2000); // World width: 2000px
 camera.setSmoothing(0.05); // Smooth following
 camera.followTarget(duck.getX(), duck.getY());
 
-// Background Layers (parallax speeds)
+// Background Layers (parallax speeds and effects)
 - Sky Gradient: 0x speed (static)
-- Far Clouds: 0.1x speed
-- Near Clouds: 0.3x speed  
-- Distant Hills: 0.6x speed
-- Near Hills: 0.8x speed
+- Clouds (sprite): 0.1x speed, 2x scale, 150px offset
+- Hills1 (sprite): 0.15x speed, 2x scale, 200px offset, 15% darkening
+- Hills2 (sprite): 0.25x speed, 1.5x scale, 100px offset
+- Trees (sprite): 0.4x speed, 1.5x scale, 50px offset
 
 // Ground System
-const ground = new Ground(500); // Ground level at Y=500
-- Soil layer: Brown (#8B4513)
-- Grass layer: Green (#228B22), 10px height
+const ground = new Ground(820); // Ground level at Y=820
+- Sprite-based rendering with ground.png
+- Seamless horizontal tiling
+- Vertical stretching to fill screen bottom
 - Proper collision detection with duck height
 ```
 
@@ -176,9 +214,15 @@ parker_duck/
 │   └── sprite-test.html          # Sprite coordinate testing interface
 ├── src/
 │   ├── assets/images/
-│   │   ├── duck_walking.png      # Walking animation sprite
-│   │   ├── duck_running.png      # Running animation sprite
-│   │   └── duck_jumping.png      # Jumping animation sprite
+│   │   ├── duck_idle.png         # Idle animation sprite (5 frames)
+│   │   ├── duck_walking.png      # Walking animation sprite (7 frames)
+│   │   ├── duck_running.png      # Running animation sprite (4 frames)
+│   │   ├── duck_jumping.png      # Jumping animation sprite (16 frames)
+│   │   ├── clouds.png            # Cloud parallax sprite
+│   │   ├── hills1.png            # Distant hills sprite
+│   │   ├── hills2.png            # Near hills sprite
+│   │   ├── trees.png             # Trees foreground sprite
+│   │   └── ground.png            # Ground texture sprite
 │   ├── game/
 │   │   ├── core/
 │   │   │   ├── Game.ts           # Main game loop with world systems
@@ -186,10 +230,10 @@ parker_duck/
 │   │   │   ├── Camera.ts         # Camera system for coordinate transformation
 │   │   │   └── DebugConfig.ts    # Master debug configuration system
 │   │   ├── entities/
-│   │   │   └── Duck.ts           # Duck character with camera integration
+│   │   │   └── Duck.ts           # Duck character with 4-state animation
 │   │   ├── world/
-│   │   │   ├── Background.ts     # Parallax background system
-│   │   │   └── Ground.ts         # Ground collision and rendering
+│   │   │   ├── Background.ts     # Advanced parallax system with atmospheric effects
+│   │   │   └── Ground.ts         # Ground collision and seamless rendering
 │   │   └── utils/
 │   │       └── Animation.ts      # Animation utility class
 ├── update-server.js              # Express server for sprite management
@@ -204,7 +248,7 @@ parker_duck/
 - Manages Camera, Background, Ground, and Duck systems
 - Proper rendering order: Background → Ground → Entities
 - Camera following with smooth interpolation
-- World bounds: 2000px width, ground at Y=500
+- World bounds: 2000px width, ground at Y=820
 
 #### Camera.ts - Coordinate Transformation
 - World-to-screen coordinate conversion
@@ -212,30 +256,32 @@ parker_duck/
 - Viewport management for 2000px world width
 - Fixed Y-axis for side-scrolling gameplay
 
-#### Background.ts - Parallax System
-- Multi-layer rendering with different scroll speeds
-- Procedural sky gradient, clouds, and hills
+#### Background.ts - Advanced Parallax System
+- Multi-layer rendering with sprite-based hills and atmospheric effects
+- Configurable scaling, horizontal offsets, and darkening filters
 - Seamless horizontal tiling for infinite scrolling
-- Performance optimized with layer-based rendering
+- Transparency-preserving darkening using globalAlpha
+- Professional atmospheric perspective (distant objects darker)
 
-#### Ground.ts - Terrain System
+#### Ground.ts - Enhanced Terrain System
+- Sprite-based ground rendering with ground.png
+- Seamless bottom coverage with vertical stretching
 - Proper collision detection with entity height
-- Visual ground rendering (soil + grass layers)
-- Extensible for future terrain variations
 - Camera-aware rendering with culling
+- Infinite horizontal tiling
 
-#### Duck.ts - Enhanced Character
+#### Duck.ts - Four-State Character
+- Complete animation system: Idle, Walk, Run, Jump
 - Camera-compatible coordinate system
 - Integrated debug bounding box rendering
+- Proper ground collision and positioning
+- Horizontal sprite mirroring for direction
 
 #### DebugConfig.ts - Debug System
 - Master configuration for all debug features
 - Keyboard shortcuts: F1 (bounding boxes), F2 (debug mode)
 - Extensible system for future debug tools
 - Centralized control ensures consistent behavior across all sprites
-- Ground system integration for proper collision
-- Coordinate getter methods for camera following
-- Backward compatibility with fallback ground collision
 
 ### Development Workflow
 1. Adjust coordinates in sprite-test.html interface
@@ -246,23 +292,20 @@ parker_duck/
 ## Current Issues/Notes
 - ✅ RESOLVED: Sprite positioning issues - now using properly formatted sprites
 - ✅ RESOLVED: Frame size inconsistencies - new sprites are consistently 76x90
-- ✅ Walking animation fully functional with proper frame rate
-- ✅ Sprite mirroring working for left/right movement
-- ✅ Server communication functioning properly
-- ✅ No autosave interference with page scrolling
-- ✅ COMPLETED: Comprehensive JSDoc documentation across all core files
-- ✅ COMPLETED: Established coding standards and development guidelines
-- ✅ COMPLETED: Running animation system implemented with duck_running.png
-- ✅ COMPLETED: Three-state animation system (walk/run/jump) working properly
-- ✅ COMPLETED: Camera system with smooth following and coordinate transformation
-- ✅ COMPLETED: Scrolling background with multiple parallax layers
-- ✅ COMPLETED: Ground system with proper collision and visual rendering
-- ✅ COMPLETED: Ground positioning and duck collision detection fixed
-- ✅ COMPLETED: Cloud system using clouds.png with proper parallax and tiling
-- 🔄 PENDING: Core world systems fully polished - ready for gameplay elements (enemies, projectiles)
+- ✅ RESOLVED: Animation system fully functional with four states (idle/walk/run/jump)
+- ✅ RESOLVED: Sprite mirroring working for left/right movement
+- ✅ RESOLVED: Server communication functioning properly
+- ✅ RESOLVED: No autosave interference with page scrolling
+- ✅ RESOLVED: Comprehensive JSDoc documentation across all core files
+- ✅ RESOLVED: Established coding standards and development guidelines
+- ✅ RESOLVED: Camera system with smooth following and coordinate transformation
+- ✅ RESOLVED: Professional parallax background with atmospheric effects
+- ✅ RESOLVED: Ground system with seamless bottom coverage
+- ✅ RESOLVED: Darkening filter system preserving sprite transparency
+- ✅ COMPLETED: All core world systems fully operational and polished
 
 ## Next Steps Suggestions
-Now that the core world systems are complete, the next logical steps are:
+Now that the core world systems are complete and polished, the next logical steps are:
 - **Enemy entities** (cartoon bread loaves with AK-47s) - core gameplay
 - **Projectile system** for shooting mechanics
 - **Collision detection** between duck and enemies/projectiles
@@ -282,92 +325,102 @@ node update-server.js
 # Access sprite test: http://localhost:9000/sprite-test.html
 ```
 
-## Latest Session (Ground & Cloud System Refinements)
+## Latest Session (Professional Background Enhancement & Ground Fixes)
 
 ### Session Overview
-Fine-tuning and improvement session focused on perfecting ground positioning, duck-ground collision, and implementing proper cloud parallax using actual sprite assets.
+Major enhancement session focused on implementing professional-quality background effects, sprite-based hills system, idle animation, and fixing ground rendering coverage issues.
 
 ### Major Accomplishments This Session
 
-1. **Ground System Positioning Fixes**
-   - **Ground Height Correction**: Reduced ground visual height from 100px to 60px to prevent oversized terrain
-   - **Ground Positioning**: Moved ground from Y=500 to Y=850 for proper bottom-screen placement
-   - **Duck-Ground Collision**: Fixed duck floating above ground by correcting collision detection math
-   - **Coordinate System**: Properly aligned duck bottom edge (`this.y + frameHeight/2`) with ground level
-   - **Visual Alignment**: Duck now stands perfectly on ground instead of floating in air
+1. **Sprite-Based Hills System Implementation**
+   - **Hills1 & Hills2 Integration**: Replaced procedural hills with actual sprite assets (hills1.png, hills2.png)
+   - **Professional Parallax**: Hills1 at 0.15x speed (distant), Hills2 at 0.25x speed (near)
+   - **Scaling System**: Hills1 at 2x scale, Hills2 at 1.5x scale for proper depth perception
+   - **Horizontal Spacing**: Configurable offsets (Hills1: 200px, Hills2: 100px) prevent repetitive patterns
+   - **Ground Positioning**: Hills positioned at Y=836 for proper ground alignment
 
-2. **Cloud System Overhaul**
-   - **Sprite Integration**: Replaced procedural clouds with actual `clouds.png` asset from images folder
-   - **Parallax Implementation**: Set clouds to scroll at 0.2x speed for proper depth effect
-   - **Aspect Ratio Preservation**: Fixed cloud squishing by using natural image dimensions
-   - **Infinite Scrolling**: Implemented seamless horizontal tiling for endless cloud repetition
-   - **Performance**: Optimized tiling logic with improved offset calculations
+2. **Atmospheric Perspective System**
+   - **Darkening Filter**: Added configurable darkening parameter to BackgroundLayer interface
+   - **Distance Effect**: Hills1 rendered with 15% darkening to simulate atmospheric perspective
+   - **Transparency Preservation**: Fixed darkening system to preserve sprite transparency using globalAlpha
+   - **Professional Quality**: Creates convincing depth effect where distant objects appear darker
 
-3. **Background Layer Refinements**
-   - **Asset Loading**: Added proper sprite loading system for clouds.png
-   - **Layer Positioning**: Positioned clouds at 5% from screen top using natural height
-   - **Tiling Logic**: Enhanced horizontal looping with bulletproof edge case handling
-   - **Visual Quality**: Maintained cloud image quality without stretching or distortion
+3. **Idle Animation Implementation**
+   - **Duck Idle Sprite**: Added duck_idle.png with 5-frame animation (76x90 per frame)
+   - **Animation State Machine**: Enhanced to prioritize Jump > Run > Walk > Idle
+   - **Default State**: Duck now starts in idle animation instead of walking
+   - **Frame Timing**: 120ms per frame for natural idle movement
+   - **Seamless Transitions**: Smooth switching between all four animation states
 
-4. **Game Feel Improvements**
-   - **Screen Layout**: Achieved proper platformer layout with ground at bottom and sky above
-   - **Depth Perception**: Clouds moving at different speed creates convincing parallax effect
-   - **Movement Feedback**: Duck walking/running creates natural world scrolling sensation
-   - **Visual Polish**: Seamless cloud repetition maintains immersion during long travels
+4. **Ground Rendering Coverage Fix**
+   - **Bottom Gap Elimination**: Fixed white gap at bottom of screen
+   - **Stretch Rendering**: Ground sprite now uses Math.max to ensure coverage to screen bottom
+   - **Seamless Display**: Ground stretches vertically when needed to fill any gaps
+   - **Visual Polish**: Eliminated visual artifacts at screen edges
+
+5. **Background Layer Configuration Refinements**
+   - **Final Layer Setup**: 
+     - Sky: 0x parallax, no effects
+     - Clouds: 0.1x parallax, 2x scale, 150px offset
+     - Hills1: 0.15x parallax, 2x scale, 200px offset, 15% darkening
+     - Hills2: 0.25x parallax, 1.5x scale, 100px offset
+     - Trees: 0.4x parallax, 1.5x scale, 50px offset
+     - Ground: 1.0x parallax, seamless bottom coverage
 
 ### Technical Implementation Details
 
-#### Ground System Corrections
-- **Ground Level**: Final position at Y=850 for bottom-screen placement
-- **Collision Detection**: `duckBottom = this.y + frameHeight/2` for proper edge calculation
-- **Landing Position**: `this.y = groundLevel - frameHeight/2` for center-based positioning
-- **Visual Sizing**: 60px soil + 10px grass = 70px total ground thickness
+#### Atmospheric Darkening System
+- **GlobalAlpha Approach**: Uses `ctx.globalAlpha = 1.0 - darken` for transparency preservation
+- **Per-Layer Configuration**: Each background layer has configurable darken parameter (0-1 range)
+- **Natural Effect**: 15% darkening on distant hills creates convincing atmospheric perspective
+- **Transparency Safe**: Completely preserves sprite transparency without dark rectangles
 
-#### Cloud Parallax Implementation
-- **Asset Loading**: `import cloudsSprite from '../../assets/images/clouds.png'`
-- **Scroll Speed**: 0.2x camera movement for distant cloud effect
-- **Tiling Logic**: `wrappedOffset = offset % textureWidth` for seamless repetition
-- **Coverage**: `startX = -wrappedOffset - textureWidth` ensures no gaps
-- **Natural Sizing**: Preserves original cloud image aspect ratio
+#### Idle Animation Integration
+- **Animation Constants**: Added ANIM_IDLE (3) to animation state system
+- **Frame Data**: 5 frames at 76x90 pixels each, consistent with other animations
+- **State Priority**: `isJumping ? JUMP : isRunning ? RUN : isWalking ? WALK : IDLE`
+- **Default Behavior**: Duck idles when no input is detected
 
-#### Layer Rendering Order
-- **Sky Gradient**: 0x speed (static background)
-- **Clouds Image**: 0.2x speed (slow parallax) - **UPDATED**
-- **Distant Hills**: 0.6x speed (procedural)
-- **Near Hills**: 0.8x speed (procedural)
-- **Ground**: 1x speed (with camera)
+#### Ground Coverage System
+- **Stretch Logic**: `renderHeight = Math.max(textureHeight, availableHeight)`
+- **Source Mapping**: Uses full texture height as source for stretching
+- **Destination Filling**: Ensures ground always extends to canvas bottom
+- **Performance**: Minimal overhead while guaranteeing coverage
 
 ### Files Modified This Session
-- `src/game/world/Ground.ts` - **UPDATED**: Fixed ground height and rendering
-- `src/game/world/Background.ts` - **UPDATED**: Clouds.png integration and tiling
-- `src/game/core/Game.ts` - **UPDATED**: Ground level positioning (Y=850)
-- `src/game/entities/Duck.ts` - **UPDATED**: Collision detection math fixes
-- `session_context.md` - **UPDATED**: Current session documentation
+- `src/game/world/Background.ts` - **MAJOR UPDATE**: Sprite-based hills, darkening system, horizontal offsets
+- `src/game/entities/Duck.ts` - **UPDATED**: Idle animation integration, state machine enhancement
+- `src/game/world/Ground.ts` - **UPDATED**: Bottom coverage fix with stretch rendering
+- `src/assets/images/` - **ADDED**: duck_idle.png, hills1.png, hills2.png sprites
+- `session_context.md` - **UPDATED**: Complete documentation of all changes
 
-### Impact and Benefits
-- **Perfect Ground Positioning**: Duck now stands naturally on ground at screen bottom
-- **Professional Visual Quality**: Clouds maintain crisp appearance without distortion
-- **Infinite World Feel**: Seamless cloud tiling creates sense of endless sky
-- **Proper Platformer Layout**: Ground placement follows established gaming conventions
-- **Enhanced Immersion**: Parallax clouds add convincing depth and movement
+### Visual Quality Improvements
+- **Professional Parallax**: Multiple sprite layers with proper depth and scaling
+- **Atmospheric Depth**: Distant objects darker, creating convincing 3D effect
+- **Natural Animation**: Idle state makes duck feel alive when not moving
+- **Seamless Coverage**: No visual gaps or artifacts at screen edges
+- **Consistent Scaling**: All sprites maintain proper proportions and quality
 
 ### Session Outcome
-This session successfully resolved critical visual and positioning issues that were preventing the game from feeling polished. The duck now has proper ground interaction, and the background system uses high-quality sprite assets with seamless scrolling. The game now has the visual foundation of a professional side-scrolling platformer.
+This session transformed the game's visual quality from basic to professional-grade. The background now features sophisticated atmospheric effects, the duck has natural idle behavior, and all rendering issues have been resolved. The game now has the visual polish expected of a commercial side-scrolling platformer.
 
 ### Next Development Priorities
-1. **Enemy System**: Add cartoon bread loaves with AK-47s
-2. **Projectile System**: Implement shooting mechanics  
-3. **Collision Detection**: Duck vs enemies/projectiles
-4. **Sound System**: Add audio effects and background music
+1. **Enemy System**: Implement cartoon bread loaves with AK-47s
+2. **Projectile System**: Add shooting mechanics for duck and enemies
+3. **Collision Detection**: Duck vs enemies/projectiles interaction
+4. **Sound System**: Audio effects and background music
 5. **UI System**: Health bars, score display, game over screens
+6. **Level Design**: Enemy spawning patterns and difficulty progression
 
 ## Memory Notes
 - User prefers assistant to proactively fix code issues without asking permission
 - All sprite coordinate management is working correctly
-- Animation system fully functional for walk/run/jump states
+- Four-state animation system fully functional (idle/walk/run/jump)
 - Server endpoints tested and working
 - Sequential thinking MCP available for complex problem-solving
 - Session context must be maintained and updated regularly
-- **NEW**: Scrolling background and ground systems fully operational
-- **NEW**: Camera system smoothly follows duck with proper world bounds
-- **NEW**: Game now has proper side-scrolling gameplay foundation 
+- **NEW**: Professional-quality background system with atmospheric effects
+- **NEW**: Sprite-based hills system with proper parallax and scaling
+- **NEW**: Idle animation system with natural state transitions
+- **NEW**: Ground rendering system with seamless bottom coverage
+- **NEW**: All visual systems polished and ready for gameplay elements 

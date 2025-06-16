@@ -4,6 +4,7 @@ import { DebugConfig } from '../core/DebugConfig';
 import duckWalkingSprite from '../../assets/images/duck_walking.png';
 import duckRunningSprite from '../../assets/images/duck_running.png';
 import duckJumpingSprite from '../../assets/images/duck_jumping.png';
+import duckIdleSprite from '../../assets/images/duck_idle.png';
 
 /** Animation frame duration for walking animation in milliseconds */
 const FRAME_DURATION_WALK = 60;
@@ -12,7 +13,10 @@ const FRAME_DURATION_WALK = 60;
 const FRAME_DURATION_RUN = 40;
 
 /** Animation frame duration for jumping animation in milliseconds */
-const FRAME_DURATION_JUMP = 10;
+const FRAME_DURATION_JUMP = 50;
+
+/** Animation frame duration for idle animation in milliseconds */
+const FRAME_DURATION_IDLE = 120;
 
 /** Animation type identifier for walking animation */
 const ANIM_WALK = 0;
@@ -22,6 +26,9 @@ const ANIM_RUN = 1;
 
 /** Animation type identifier for jumping animation */
 const ANIM_JUMP = 2;
+
+/** Animation type identifier for idle animation */
+const ANIM_IDLE = 3;
 
 /**
  * Duck character class representing the main player character.
@@ -85,6 +92,9 @@ export class Duck {
     /** Sprite image for jumping animation */
     private jumpingSprite: HTMLImageElement;
     
+    /** Sprite image for idle animation */
+    private idleSprite: HTMLImageElement;
+    
     /** Currently active sprite being rendered */
     private currentSprite: HTMLImageElement;
     
@@ -106,8 +116,11 @@ export class Duck {
     /** Whether the jumping sprite has finished loading */
     private jumpingLoaded: boolean = false;
     
-    /** Current animation type (ANIM_WALK, ANIM_RUN, or ANIM_JUMP) */
-    private currentAnimType: number = ANIM_WALK;
+    /** Whether the idle sprite has finished loading */
+    private idleLoaded: boolean = false;
+    
+    /** Current animation type (ANIM_WALK, ANIM_RUN, ANIM_JUMP, or ANIM_IDLE) */
+    private currentAnimType: number = ANIM_IDLE;
     
     /** Rendering scale factor (currently unused) */
     private scale: number = 1;
@@ -154,25 +167,34 @@ export class Duck {
             this.initializeAnimation();
         };
         
-        // Start with walking sprite
-        this.currentSprite = this.walkingSprite;
+        // Initialize idle sprite
+        this.idleSprite = new window.Image();
+        this.idleSprite.src = duckIdleSprite;
+        this.idleSprite.onload = () => {
+            console.log('Idle sprite loaded:', this.idleSprite.width, this.idleSprite.height);
+            this.idleLoaded = true;
+            this.initializeAnimation();
+        };
+        
+        // Start with idle sprite
+        this.currentSprite = this.idleSprite;
     }
     
     /**
      * Initializes the animation system once sprites are loaded.
-     * Sets up the walking animation as the default state.
+     * Sets up the idle animation as the default state.
      * 
      * @private
      */
     private initializeAnimation(): void {
-        if (this.walkingLoaded && this.currentAnimType === ANIM_WALK) {
+        if (this.idleLoaded && this.currentAnimType === ANIM_IDLE) {
             this.animation = new Animation(
-                this.walkingSprite,
+                this.idleSprite,
                 this.frameWidth,
                 this.frameHeight,
-                0, // row 0 for walking
-                7, // 7 frames for walking
-                FRAME_DURATION_WALK
+                0, // row 0 for idle
+                5, // 5 frames for idle
+                FRAME_DURATION_IDLE
             );
         }
     }
@@ -217,6 +239,16 @@ export class Duck {
                 0, // start with row 0
                 16, // 16 total frames (8x2)
                 FRAME_DURATION_JUMP
+            );
+        } else if (newAnimType === ANIM_IDLE && this.idleLoaded) {
+            this.currentSprite = this.idleSprite;
+            this.animation = new Animation(
+                this.idleSprite,
+                this.frameWidth,
+                this.frameHeight,
+                0, // row 0
+                5, // 5 frames
+                FRAME_DURATION_IDLE
             );
         }
     }
@@ -283,13 +315,16 @@ export class Duck {
 
         // Animation switching
         if (this.animation) {
-            let newAnimType = ANIM_WALK;
+            let newAnimType = ANIM_IDLE;
             
             if (this.isJumping) {
                 newAnimType = ANIM_JUMP;
             } else if (moving) {
                 // Choose between walking and running based on shift key
                 newAnimType = running ? ANIM_RUN : ANIM_WALK;
+            } else {
+                // Not moving and not jumping = idle
+                newAnimType = ANIM_IDLE;
             }
             
             // Switch animation if needed
@@ -306,13 +341,9 @@ export class Duck {
                     this.animation.update(deltaTime);
                 }
                 // If on last frame, freeze there until landing
-            } else if (moving) {
-                // Normal walking or running animation
+            } else if (moving || this.currentAnimType === ANIM_IDLE) {
+                // Normal walking, running, or idle animation
                 this.animation.update(deltaTime);
-            } else {
-                // Idle: set to first frame of walk animation
-                this.animation.setRow(0);
-                this.animation.reset();
             }
         }
     }
@@ -407,8 +438,32 @@ export class Duck {
                         }
                     }
                     
-                    if (frame < jumpFrameData.length) {
-                        const frameData = jumpFrameData[frame];
+                    // Ensure frame is within valid range
+                    const clampedFrame = Math.max(0, Math.min(frame, jumpFrameData.length - 1));
+                    if (clampedFrame < jumpFrameData.length) {
+                        const frameData = jumpFrameData[clampedFrame];
+                        sx = frameData.x;
+                        sy = frameData.y;
+                        sw = frameData.width;
+                        sh = frameData.height;
+                    }
+                    
+                    // Debug logging to track what's happening
+                    if (frame !== clampedFrame) {
+                        console.log(`Jump frame clamped: ${frame} -> ${clampedFrame}, max: ${jumpFrameData.length - 1}`);
+                    }
+                } else if (this.currentAnimType === ANIM_IDLE) {
+                    // Idle animation frames - 5 frames, each 76x90 pixels
+                    const idleFrameData = [
+                        { x: 0, y: 0, width: 76, height: 90 },      // frame 0
+                        { x: 76, y: 0, width: 76, height: 90 },     // frame 1
+                        { x: 152, y: 0, width: 76, height: 90 },    // frame 2
+                        { x: 228, y: 0, width: 76, height: 90 },    // frame 3
+                        { x: 304, y: 0, width: 76, height: 90 },    // frame 4
+                    ];
+                    
+                    if (frame < idleFrameData.length) {
+                        const frameData = idleFrameData[frame];
                         sx = frameData.x;
                         sy = frameData.y;
                         sw = frameData.width;
