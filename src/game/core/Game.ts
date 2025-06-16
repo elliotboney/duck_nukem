@@ -80,7 +80,7 @@ export class Game {
         this.duck = new Duck(100, 865, this.inputHandler);
         
         // Configure camera
-        this.camera.setBounds(0, 2000); // World width of 2000 pixels
+        this.camera.setBounds(0, 8000); // World width of 8000 pixels (4x longer)
         this.camera.setSmoothing(0.05); // Smooth camera following
         
         // Configure background for side-scrolling feel

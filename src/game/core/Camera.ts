@@ -45,7 +45,7 @@ export class Camera {
     private minX: number = 0;
     
     /** Maximum world X boundary for camera movement */
-    private maxX: number = 2000; // Default world width
+    private maxX: number = 8000; // Default world width (4x longer)
     
     /** Fixed Y position for side-scrolling (ground level focus) */
     private fixedY: number = 300;

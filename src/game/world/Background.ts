@@ -32,6 +32,19 @@ export class Background {
     /** Array of background layers, rendered back to front */
     private layers: BackgroundLayer[] = [];
     
+    /**
+     * Safe modulo operation that handles negative numbers and large values properly.
+     * Prevents floating-point precision issues with large parallax offsets.
+     * 
+     * @param value - The value to wrap
+     * @param modulus - The modulus to wrap by
+     * @returns Properly wrapped value between 0 and modulus
+     * @private
+     */
+    private safeModulo(value: number, modulus: number): number {
+        return ((value % modulus) + modulus) % modulus;
+    }
+    
     /** Sky gradient colors */
     private skyColorTop: string = '#87CEEB'; // Sky blue
     private skyColorBottom: string = '#E0F6FF'; // Light blue
@@ -285,15 +298,16 @@ export class Background {
         const scaledHeight = textureHeight * scale;
         
         // Calculate seamless horizontal tiling offset using scaled width
-        const wrappedOffset = offset % scaledWidth;
-        // Apply horizontal offset after modulo to preserve the full offset value
-        const startX = -wrappedOffset - scaledWidth + horizontalOffset;
+        const wrappedOffset = this.safeModulo(offset, scaledWidth);
+        // Apply horizontal offset to position only, keeping consistent tile spacing
+        const baseStartX = -wrappedOffset - scaledWidth;
+        const startX = baseStartX + horizontalOffset;
         
         // Position clouds in the upper portion of the screen, using scaled dimensions
         const cloudsY = height * 0.05; // 5% from top
         
-        // Tile clouds across the entire screen width with overlap to prevent seams
-        const tileSpacing = scaledWidth + horizontalOffset; // Negative horizontalOffset creates overlap
+        // Tile clouds across the entire screen width with consistent spacing
+        const tileSpacing = scaledWidth; // Keep spacing consistent for stable tiling
         for (let x = startX; x <= width + Math.abs(tileSpacing); x += tileSpacing) {
             // Draw the clouds sprite
             ctx.drawImage(
@@ -381,9 +395,10 @@ export class Background {
         const scaledHeight = textureHeight * scale;
         
         // Calculate seamless horizontal tiling offset using scaled width
-        const wrappedOffset = offset % scaledWidth;
-        // Apply horizontal offset after modulo to preserve the full offset value
-        const startX = -wrappedOffset - scaledWidth + horizontalOffset;
+        const wrappedOffset = this.safeModulo(offset, scaledWidth);
+        // Apply horizontal offset to position only, keeping consistent tile spacing
+        const baseStartX = -wrappedOffset - scaledWidth;
+        const startX = baseStartX + horizontalOffset;
         
         // Position trees on the ground level (world Y 823, adjusted to screen coordinates)
         // Ground is at world Y 823, trees should sit on dirt surface accounting for grass layer
@@ -393,8 +408,8 @@ export class Background {
         
         // Only render if trees are visible on screen
         if (treesY < height && treesY + scaledHeight > 0) {
-            // Tile trees across the entire screen width with overlap to prevent seams
-            const tileSpacing = scaledWidth + horizontalOffset; // Negative horizontalOffset creates overlap
+            // Tile trees across the entire screen width with consistent spacing
+            const tileSpacing = scaledWidth; // Keep spacing consistent for stable tiling
             for (let x = startX; x <= width + Math.abs(tileSpacing); x += tileSpacing) {
                 // Draw the trees sprite
                 ctx.drawImage(
@@ -439,8 +454,10 @@ export class Background {
         const scaledHeight = textureHeight * scale;
         
         // Calculate seamless horizontal tiling offset using scaled width
-        const wrappedOffset = offset % scaledWidth;
-        const startX = -wrappedOffset - scaledWidth + horizontalOffset;
+        const wrappedOffset = this.safeModulo(offset, scaledWidth);
+        // Apply horizontal offset to position only, keeping consistent tile spacing
+        const baseStartX = -wrappedOffset - scaledWidth;
+        const startX = baseStartX + horizontalOffset;
         
         // Position hills to align with the bottom of the screen (resting on ground level)
         const groundWorldY = 836; // Ground level in world coordinates
@@ -449,8 +466,8 @@ export class Background {
         
         // Only render if hills are visible on screen
         if (hillsY < height && hillsY + scaledHeight > 0) {
-            // Tile hills across the entire screen width with overlap to prevent seams
-            const tileSpacing = scaledWidth + horizontalOffset; // Negative horizontalOffset creates overlap
+            // Tile hills across the entire screen width with consistent spacing
+            const tileSpacing = scaledWidth; // Keep spacing consistent for stable tiling
             for (let x = startX; x <= width + Math.abs(tileSpacing); x += tileSpacing) {
                 // Draw the hills sprite
                 ctx.drawImage(
@@ -484,7 +501,7 @@ export class Background {
         if (!layer.texture) return;
         
         const textureWidth = layer.texture.width;
-        const startX = -((offset % textureWidth + textureWidth) % textureWidth);
+        const startX = -this.safeModulo(offset, textureWidth);
         
         for (let x = startX; x < width + textureWidth; x += textureWidth) {
             ctx.drawImage(layer.texture, x, 0, textureWidth, height);
